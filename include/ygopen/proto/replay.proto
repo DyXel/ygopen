@@ -1,0 +1,60 @@
+/*
+ * Copyright (c) 2021, Dylam De La Torre <dyxel04@gmail.com>
+ *
+ * SPDX-License-Identifier: AGPL-3.0-or-later
+ */
+syntax = "proto3";
+
+// TODO: Documentation.
+
+package YGOpen.Proto;
+
+import "duel_msg.proto";
+
+option cc_enable_arenas = true;
+option optimize_for = LITE_RUNTIME;
+
+message Replay
+{
+	// TODO: Duelists information.
+	// TODO: Multiple duels in a single replay?
+
+	message Stream
+	{
+		message Block
+		{
+			uint32 time_offset_ms = 1;
+			oneof t
+			{
+				Duel.Msg msg      = 2;
+// 				ChatMsg chat_msg  = 3;
+			}
+		}
+		repeated Block blocks = 1;
+	}
+
+	message CompressedStream
+	{
+		message LZ4
+		{
+			// TODO
+		}
+		message LZMA
+		{
+			// TODO
+		}
+		bytes buffer             = 1;
+		uint64 uncompressed_size = 2;
+		oneof algorithm
+		{
+			LZ4 lz4              = 3;
+			LZMA lzma            = 4;
+		}
+	}
+
+	oneof t
+	{
+		Stream stream                      = 1;
+		CompressedStream compressed_stream = 2;
+	}
+}

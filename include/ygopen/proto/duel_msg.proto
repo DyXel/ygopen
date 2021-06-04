@@ -1,0 +1,663 @@
+/*
+ * Copyright (c) 2021, Dylam De La Torre <dyxel04@gmail.com>
+ *
+ * SPDX-License-Identifier: AGPL-3.0-or-later
+ */
+syntax = "proto3";
+
+// TODO: Documentation.
+
+package YGOpen.Proto.Duel;
+
+import "duel_data.proto";
+import "duel_enum.proto";
+
+option cc_enable_arenas = true;
+option optimize_for = LITE_RUNTIME;
+
+message Msg
+{
+	message Event
+	{
+		message Board
+		{
+			message Exchange
+			{
+				Controller con     = 1;
+				Card.Remove remove = 2;
+				Card.Add add       = 3;
+				Pile.Resize resize = 4;
+			}
+
+			message State // NOTE: Completely clears previous state.
+			{
+				// TODO: Expand these flags into generic options.
+				uint32 core_flags     = 1;
+				// NOTE: < 0 to not update turn counter.
+				int32 turn_counter    = 2;
+				repeated uint32 lps   = 3;
+				repeated Chain chains = 4;
+				Card.Add add          = 5;
+				Pile.Resize resize    = 6;
+			}
+
+			oneof t
+			{
+				Exchange exchange = 1;
+				State state       = 2;
+			}
+		}
+
+		message Card
+		{
+			message Add
+			{
+				repeated Place places = 1;
+			}
+
+			message Exchange
+			{
+				message _Operation
+				{
+					Place place_a = 1;
+					Place place_b = 2;
+				}
+
+				repeated _Operation ops = 1;
+			}
+
+			message Move
+			{
+				message _Operation
+				{
+					Place old_place = 1;
+					Place new_place = 2;
+				}
+
+				repeated _Operation ops = 1;
+			}
+
+			message Remove
+			{
+				repeated Place places = 1;
+			}
+
+			message Shuffle
+			{
+				repeated Place previous_places = 1;
+				// NOTE: Size must match old_places', but places can be empty:
+				// loc == LOCATION_UNSPECIFIED.
+				repeated Place current_places  = 2;
+			}
+
+			Reason reason                  = 1;
+			oneof t
+			{
+				Add add                    = 2;
+				Exchange exchange          = 3;
+				Move move                  = 4;
+				Remove remove              = 5;
+				Shuffle shuffle            = 6;
+			}
+		}
+
+		message ChainStack
+		{
+			oneof t
+			{
+				Chain push = 1;
+				bool pop   = 2;
+			}
+		}
+
+		message Finish
+		{
+			uint32 win_reason       = 1;
+			// NOTE: non-0 means match won.
+			uint32 match_win_reason = 2;
+			oneof t
+			{
+				Controller winner   = 3;
+				bool draw           = 4;
+			}
+		}
+
+		message LP
+		{
+			Controller controller = 1;
+			oneof t
+			{
+				uint32 become     = 2; // =
+				uint32 damage     = 3; // -
+				uint32 pay        = 4; // -
+				uint32 recover    = 5; // +
+			}
+		}
+
+		message Meta
+		{
+			message Attack
+			{
+				Place attacker      = 1;
+				// NOTE: Empty (loc == LOCATION_UNSPECIFIED) is a direct attack.
+				Place attack_target = 2;
+			}
+
+			enum ChainStatus
+			{
+				CHAIN_STATUS_SOLVING = 0;
+				CHAIN_STATUS_NEGATED = 1;
+				CHAIN_STATUS_SOLVED = 2;
+			}
+
+			message Confirm
+			{
+				Reason reason         = 1;
+				repeated Place places = 2;
+			}
+
+			message Description
+			{
+				Controller con    = 1;
+				oneof t
+				{
+					Effect add    = 2;
+					Effect remove = 3;
+				}
+			}
+
+			message FlashCard
+			{
+				uint32 code     = 1;
+				bool has_number = 2;
+				int32 number    = 3;
+			}
+
+			message MissedTiming // NOTE: If... You Can VS When... You Can.
+			{
+				repeated Place places = 1; // TODO: probably also want Effect?
+			}
+
+			message Selection
+			{
+				Place selector                 = 1;
+				Reason reason                  = 2;
+				repeated Place selected_places = 3;
+			}
+
+			message ShufflePile
+			{
+				repeated Place places = 1;
+			}
+
+			message Update
+			{
+				Reason reason         = 1;
+				repeated Place places = 2;
+			}
+
+			oneof t
+			{
+				Attack attack              = 1;
+				ChainStatus chain_status   = 2;
+				Confirm confirm            = 3;
+				Description description    = 4;
+				FlashCard flash_card       = 5;
+				MissedTiming missed_timing = 6;
+				Selection selection        = 7;
+				ShufflePile shuffle_pile   = 8;
+				Update update              = 9;
+			}
+		}
+
+		message Pile
+		{
+			message Exchange
+			{
+				message _Operation
+				{
+					Place place_a = 1;
+					Place place_b = 2;
+				}
+
+				repeated _Operation ops = 1;
+			}
+
+			message Resize
+			{
+				message _Operation
+				{
+					Place place  = 1;
+					uint32 count = 2;
+				}
+
+				repeated _Operation ops = 1;
+			}
+
+			message Splice
+			{
+				message _Operation
+				{
+					Place from   = 1;
+					uint32 count = 2;
+					Place to     = 3;
+					bool reverse = 4;
+				}
+
+				repeated _Operation ops = 1;
+			}
+
+			Reason reason         = 1;
+			oneof t
+			{
+				Exchange exchange = 2;
+				Resize resize     = 3;
+				Splice splice     = 4;
+			}
+		}
+
+		message Result
+		{
+			message Coin
+			{
+				Controller actor     = 1;
+				repeated bool values = 2;
+			}
+
+			message Dice
+			{
+				Controller actor       = 1;
+				repeated uint32 values = 2;
+			}
+
+			message RPS
+			{
+				repeated RockPaperScissor values = 1;
+			}
+
+			oneof t
+			{
+				Coin coin = 1;
+				Dice dice = 2;
+				RPS rps   = 3;
+			}
+		}
+
+		message ZoneBlock // NOTE: Frees up previous zones.
+		{
+			repeated Place zones = 1;
+		}
+
+		// TODO: Card hints & player hints (probably under Meta)
+
+		oneof t
+		{
+			Board board            = 1;
+			Card card              = 2;
+			ChainStack chain_stack = 3;
+			Controller next_turn   = 4;
+			Finish finish          = 5;
+			LP lp                  = 6;
+			Meta meta              = 7;
+			Phase next_phase       = 8;
+			Pile pile              = 9;
+			Result result          = 10;
+			ZoneBlock zone_block   = 11;
+		}
+	}
+
+	message Request
+	{
+		message DeclareCode // TODO: Refactor this to use a properly structured flow.
+		{
+			// Amount of cards to declare (usually one).
+			uint32 count            = 1;
+			// List of Reverse Polish Notation operation codes used to
+			// compute a filtered list of elegible cards.
+			// NOTE: Empty list means ANY card code.
+			// NOTE: Opcodes from 'ygopro-core/common.h'.
+			repeated uint64 opcodes = 2;
+		}
+
+		message SelectAttribute
+		{
+			// Amount of attributes to declare.
+			uint32 count         = 1;
+			// Attributes to choose from OR'd together.
+			Attribute attributes = 2;
+		}
+
+		message SelectCard // TODO: Refactor.
+		{
+			// Type of selection, each type has different behavior
+			// and expectations on how an answer should be made.
+			// Check the enum value comments for details.
+			enum SelectCardType
+			{
+				SELECT_CARD_TYPE_UNSPECIFIED = 0;
+				// TODO
+				SELECT_CARD_TYPE_NORMAL      = 1;
+				// TODO
+				SELECT_CARD_TYPE_TRIBUTE     = 2;
+				// TODO
+				SELECT_CARD_TYPE_SUM         = 3;
+				// TODO
+				SELECT_CARD_TYPE_MULTI       = 4; // SelectUnselect
+				// TODO
+				SELECT_CARD_TYPE_COUNTER     = 5;
+			}
+
+			message SumParam
+			{
+				enum SumCriteria
+				{
+					SUM_CRITERIA_UNSPECIFIED = 0;
+					SUM_CRITERIA_EQUAL       = 1;
+					SUM_CRITERIA_GREATER     = 2;
+				}
+				SumCriteria sum_criteria = 1;
+				uint32 value             = 2;
+			}
+
+			SelectCardType type               = 1;
+			// Can the current selection be finished (either accept or cancel)?
+			bool can_finish                   = 2;
+			// Will finishing the selection accept (true) or cancel (false)?
+			bool accept                       = 3;
+			// Minimum cards to select.
+			uint32 min                        = 4;
+			// Maximum cards to select.
+			uint32 max                        = 5;
+			// Cards that must be selected.
+			repeated Place must_select_cards  = 6;
+			// Cards that can be selected.
+			repeated Place selectable_cards   = 7;
+			// Cards that are selected and can be unselected.
+			repeated Place unselectable_cards = 8;
+			oneof t
+			{
+				// Used by Tribute and Sum.
+				SumParam sum_param            = 9;
+				// Counter type and number of counters the that
+				// must be removed from cards to satisfy selection.
+				Counter counter               = 10;
+			}
+		}
+
+		message SelectEffect
+		{
+			// Amount of effects to choose (usually one).
+			uint32 count            = 1;
+			// List of effects the player can choose
+			repeated Effect effects = 2;
+		}
+
+		message SelectIdle
+		{
+			// Can the shuffle action be executed? (usually shuffles hand).
+			bool can_shuffle                    = 1;
+			// Phases that can be selected OR'd together.
+			Phase available_phase               = 2;
+			// Cards that can activate an ignition effect.
+			repeated Place activable_cards      = 3;
+			// Cards that can be either Normal or Tribute summoned.
+			repeated Place summonable_cards     = 4;
+			// Cards that can be Special summoned (inherent).
+			repeated Place spsummonable_cards   = 5;
+			// Cards that can change Battle Position.
+			repeated Place repositionable_cards = 6;
+			// Cards that can be set on a Monster Zone.
+			repeated Place msetable_cards       = 7;
+			// Cards that can be set on a Spell/Trap Zone.
+			repeated Place ssetable_cards       = 8;
+			// Cards that can declare an attack.
+			repeated Place can_attack_cards     = 9;
+		}
+
+		message SelectNumber
+		{
+			// Amount of numbers to choose (usually one).
+			uint32 count            = 1;
+			// List of numbers that can be selected.
+			repeated uint64 numbers = 2;
+		}
+
+		message SelectPosition
+		{
+			// Amount of positions to select (usually one).
+			uint32 count      = 1;
+			// Card code associated with this selection (used to display picture).
+			uint32 code       = 2;
+			// Positions to choose from OR'd together.
+			Position position = 3;
+		}
+
+		message SelectRace
+		{
+			// Amount of races to select.
+			uint32 count = 1;
+			// Races to choose from OR'd together.
+			Race race    = 2;
+		}
+
+		message SelectToChain
+		{
+			// Are the effect(s) mandatory?
+			bool forced                    = 1;
+			// Are the effect(s) trigger?
+			bool triggering                = 2;
+			// Cards that can be chained or resolved.
+			repeated Place activable_cards = 3;
+		}
+
+		message SelectYesNo
+		{
+			// Place, if any, from where a card is asking.
+			Place place   = 1;
+			// Original card code, if any, of the card that is asking.
+			uint32 code   = 2;
+			// Effect, if any, that is being asked for.
+			Effect effect = 3;
+		}
+
+		message SelectZone
+		{
+			// Is selection being done to block zones?
+			bool blocking         = 1;
+			// Amount of places to select.
+			uint32 count          = 2;
+			// List of places to select from.
+			repeated Place places = 3;
+		}
+
+		message Sort
+		{
+			message Element
+			{
+				Place place = 1;
+				uint32 code = 2;
+			}
+			// Element (card or chains) to sort.
+			repeated Element elements = 1;
+		}
+
+		// The controller/duelist/player who should answer this message.
+		Controller for = 1;
+		// TODO: Hints
+		oneof t
+		{
+			DeclareCode declare_code         = 2;
+			SelectAttribute select_attribute = 3;
+			SelectCard select_card           = 4;
+			SelectNumber select_number       = 5;
+			SelectPosition select_position   = 6;
+			SelectRace select_race           = 7;
+			bool select_rock_paper_scissor   = 8;
+			SelectToChain select_to_chain    = 9;
+			SelectYesNo select_yes_no        = 10;
+			SelectZone select_zone           = 11;
+			Sort sort                        = 12;
+		}
+	}
+
+	message Query
+	{
+		message Data
+		{
+			message QOwner // QUERY_OWNER
+			{
+				Controller value = 1;
+			}
+			QOwner owner = 1;
+
+			message QIsPublic // QUERY_IS_PUBLIC
+			{
+				bool value = 1;
+			}
+			QIsPublic is_public = 2;
+
+			message QIsHidden // QUERY_IS_HIDDEN
+			{
+				bool value = 1;
+			}
+			QIsHidden is_hidden = 3;
+
+			message QPosition // QUERY_POSITION
+			{
+				Position value = 1;
+			}
+			QPosition position = 4;
+
+			message QCover // QUERY_COVER
+			{
+				uint32 value = 1;
+			}
+			QCover cover = 5;
+
+			message QStatus // QUERY_STATUS (negated/properly summoned/etc)
+			{
+				Status value = 1;
+			}
+			QStatus status = 6;
+
+			message QCode // QUERY_CODE
+			{
+				uint32 value = 1;
+			}
+			QCode code = 7;
+
+			message QAlias // QUERY_ALIAS
+			{
+				uint32 value = 1;
+			}
+			QAlias alias = 8;
+
+			message QType // QUERY_TYPE
+			{
+				Type value = 1;
+			}
+			QType type = 9;
+
+			message QLevel // QUERY_LEVEL
+			{
+				uint32 value = 1;
+			}
+			QLevel level = 10;
+
+			message QXyzRank // QUERY_RANK
+			{
+				uint32 value = 1;
+			}
+			QXyzRank xyz_rank = 11;
+
+			message QAttribute // QUERY_ATTRIBUTE
+			{
+				Attribute value = 1;
+			}
+			QAttribute attribute = 12;
+
+			message QRace // QUERY_RACE
+			{
+				Race value = 1;
+			}
+			QRace race = 13;
+
+			message QBaseAtk // QUERY_BASE_ATTACK
+			{
+				int32 value = 1;
+			}
+			QBaseAtk base_atk = 14;
+
+			message QAtk // QUERY_ATTACK
+			{
+				int32 value = 1;
+			}
+			QAtk atk = 15;
+
+			message QBaseDef // QUERY_BASE_DEFENSE
+			{
+				int32 value = 1;
+			}
+			QBaseDef base_def = 16;
+
+			message QDef // QUERY_DEFENSE
+			{
+				int32 value = 1;
+			}
+			QDef def = 17;
+
+			message QPendLScale // QUERY_LSCALE
+			{
+				uint32 value = 1;
+			}
+			QPendLScale pend_l_scale = 18;
+
+			message QPendRScale // QUERY_RSCALE
+			{
+				uint32 value = 1;
+			}
+			QPendRScale pend_r_scale = 19;
+
+			message QLinkRate // QUERY_LINK
+			{
+				uint32 value = 1;
+			}
+			QLinkRate link_rate = 20;
+
+			message QLinkArrow // QUERY_LINK
+			{
+				LinkArrow value = 1;
+			}
+			QLinkArrow link_arrow = 21;
+
+			message QCounter // QUERY_COUNTERS
+			{
+				repeated Counter values = 1;
+			}
+			QCounter counters = 22;
+
+			message QEquipped // QUERY_EQUIP_CARD
+			{
+				Place value = 1;
+			}
+			QEquipped equipped = 23;
+
+			message QRelation // QUERY_TARGET_CARD
+			{
+				repeated Place values = 1;
+			}
+			QRelation relations = 24;
+		}
+
+		Place place = 1;
+		Data data   = 2;
+	}
+
+	oneof t
+	{
+		Event event     = 1;
+		Request request = 2;
+	}
+
+	repeated Query queries = 3;
+}

@@ -1,0 +1,42 @@
+/*
+ * Copyright (c) 2021, Dylam De La Torre <dyxel04@gmail.com>
+ *
+ * SPDX-License-Identifier: AGPL-3.0-or-later
+ */
+syntax = "proto3";
+
+// TODO: Documentation.
+
+package YGOpen.Proto.Duel;
+
+import "duel_enum.proto";
+
+option cc_enable_arenas = true;
+option optimize_for = LITE_RUNTIME;
+
+message Chain
+{
+	Place card_place = 1;
+	Place place      = 2;
+	Effect effect    = 3;
+}
+
+message Counter
+{
+	uint32 type  = 1;
+	uint32 count = 2;
+}
+
+message Effect
+{
+	uint32 code  = 1;
+	uint32 index = 2;
+}
+
+message Place
+{
+	Controller con = 1;
+	Location loc   = 2;
+	uint32 seq     = 3; // Sequence.
+	sint32 oseq    = 4; // Overlay sequence, < 0 for invalid sequence.
+}

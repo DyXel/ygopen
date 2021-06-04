@@ -1,0 +1,30 @@
+/*
+ * Copyright (c) 2021, Dylam De La Torre <dyxel04@gmail.com>
+ *
+ * SPDX-License-Identifier: AGPL-3.0-or-later
+ */
+syntax = "proto3";
+
+// TODO: Documentation.
+
+package YGOpen.Proto.Net;
+
+// import "duel_enum.proto";
+
+option cc_enable_arenas = true;
+option optimize_for = LITE_RUNTIME;
+
+message User
+{
+	string name = 1;
+	string id   = 2;
+	// TODO: figure which one is better.
+	// https://en.wikipedia.org/wiki/ISO_3166-1_alpha-3
+	// https://en.wikipedia.org/wiki/ISO_3166-1_numeric
+// 	string flag_id = 3;
+}
+
+message ServerPacket
+{
+
+}
