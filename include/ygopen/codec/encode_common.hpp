@@ -71,6 +71,10 @@ public:
 	// Get the number of cards in a certain pile.
 	[[nodiscard]] virtual auto pile_size(Con, Loc) const noexcept -> size_t = 0;
 
+	// Get the reason (if any) why the entire match was won.
+	[[nodiscard]] virtual auto get_match_win_reason() const noexcept
+		-> uint32_t = 0;
+
 	// Check if a certain place on the field has materials.
 	[[nodiscard]] virtual auto has_xyz_mat(Place const&) const noexcept
 		-> bool = 0;
@@ -80,7 +84,7 @@ public:
 		-> Place = 0;
 
 	// Set a reason why the entire match was won.
-	virtual auto match_kill_reason(uint32_t) noexcept -> void = 0;
+	virtual auto match_win_reason(uint32_t) noexcept -> void = 0;
 
 	// A card is trying to attach itself as material to a place that is not in
 	// the field.

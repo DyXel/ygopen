@@ -50,6 +50,7 @@ constexpr auto is_special_msg(OCGCoreMsgValue core_msg) noexcept -> bool
 {
 	switch(core_msg)
 	{
+	case MSG_WIN:
 	case MSG_HINT:
 	case MSG_SWAP_GRAVE_DECK:
 	case MSG_REVERSE_DECK:
@@ -525,17 +526,6 @@ auto encode_one(google::protobuf::Arena& arena, uint8_t const* data) noexcept
 	/*
 	 * Event messages.
 	 */
-	case MSG_WIN:
-	{
-		auto* finish = create_event()->mutable_finish();
-		const auto winner = read<CPlayer>(data, "who won");
-		finish->set_win_reason(read<uint8_t>(data, "win reason"));
-		if(winner != 2U)
-			finish->set_winner(static_cast<Controller>(winner));
-		else
-			finish->set_draw(true);
-		break;
-	}
 	case MSG_CONFIRM_DECKTOP:
 	case MSG_CONFIRM_EXTRATOP:
 	{
@@ -1056,6 +1046,20 @@ auto encode_one_special(google::protobuf::Arena& arena, IEncodeContext& context,
 		/*
 		 * Special messages.
 		 */
+	case MSG_WIN:
+	{
+		// Core Mitigation: See MSG_MATCH_KILL handling.
+		auto* finish = create_event()->mutable_finish();
+		const auto winner = read<CPlayer>(data, "who won");
+		finish->set_win_reason(read<uint8_t>(data, "win reason"));
+		finish->set_match_win_reason(context.get_match_win_reason());
+		if(winner != 2U)
+			finish->set_winner(static_cast<Controller>(winner));
+		else
+			finish->set_draw(true);
+		result.state = EncodeOneResult::State::STATE_OK;
+		break;
+	}
 	case MSG_HINT:
 	{
 		// Core Mitigation: This message does too much, it should be split into
@@ -1345,7 +1349,7 @@ auto encode_one_special(google::protobuf::Arena& arena, IEncodeContext& context,
 	case MSG_MATCH_KILL:
 	{
 		// Core Mitigation: Just write this with MSG_WIN directly.
-		context.match_kill_reason(read<uint32_t>(data, "match kill reason"));
+		context.match_win_reason(read<uint32_t>(data, "match win reason"));
 		result.state = EncodeOneResult::State::STATE_SWALLOWED;
 		break;
 	}
