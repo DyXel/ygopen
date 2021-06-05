@@ -285,10 +285,10 @@ template<typename Next>
 inline auto unpack_zones(CField zones, CPlayer invert, Next next) noexcept
 	-> void
 {
-	constexpr CField FIELD_HALF = 16U;
-	constexpr CField FIELD_MZONE_COUNT = 7U; // 5 MMZ + 2 EMZ.
-	constexpr CField FIELD_SZONE_COUNT = 5U;
-	constexpr CField FIELD_PZONE_COUNT = 2U;
+	static constexpr CField FIELD_HALF = 16U;
+	static constexpr CField FIELD_MZONE_COUNT = 7U; // 5 MMZ + 2 EMZ.
+	static constexpr CField FIELD_SZONE_COUNT = 5U;
+	static constexpr CField FIELD_PZONE_COUNT = 2U;
 	using namespace YGOpen::Proto::Duel;
 	auto add_place = [&](CPlayer con, Location loc, CSeq seq)
 	{
@@ -1375,7 +1375,11 @@ auto encode_one_special(google::protobuf::Arena& arena, IEncodeContext& context,
 	}
 	default:
 		// NOTE: Assuming that is_special_msg(core_msg) == true.
+#ifdef _MSC_VER
+		__assume(0);
+#else
 		__builtin_unreachable();
+#endif // _MSC_VER
 	}
 	result.bytes_read = static_cast<size_t>(data - sentry);
 	log("bytes read: ", result.bytes_read);

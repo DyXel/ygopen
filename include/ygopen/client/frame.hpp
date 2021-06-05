@@ -92,7 +92,11 @@ public:
 				return t.pendulum_.data();
 			if(loc == LOCATION_SKILL_ZONE)
 				return t.skill_.data();
+#ifdef _MSC_VER
+			__assume(0);
+#else
 			__builtin_unreachable();
+#endif // _MSC_VER
 		}
 	};
 
@@ -557,7 +561,11 @@ private:
 			return t.banished_[con];
 		if(loc == LOCATION_EXTRA_DECK)
 			return t.extra_deck_[con];
+#ifdef _MSC_VER
+		__assume(0);
+#else
 		__builtin_unreachable();
+#endif // _MSC_VER
 	}
 
 	template<typename T>
