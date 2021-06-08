@@ -1,6 +1,6 @@
 project('ygopen', 'cpp', license : 'AGPL-3.0-or-later', default_options : 'cpp_std=c++17')
 
-protobuf_dep = dependency('protobuf-lite')
+protobuf_dep = dependency('protobuf-lite', version : '>=3.8.0')
 # sqlite3_dep = dependency('sqlite3')
 
 ygopen_inc = include_directories('include/')
