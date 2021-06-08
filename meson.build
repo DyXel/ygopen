@@ -14,3 +14,4 @@ subdir('include/ygopen/proto')
 ygopen_lib = static_library('ygopen', [ygopen_src, generated_proto], dependencies : protobuf_dep, include_directories : ygopen_inc)
 
 ygopen_dep = declare_dependency(dependencies : protobuf_dep, include_directories : [ygopen_inc, ygopen_lib.private_dir_include()], link_with : ygopen_lib)
+meson.override_dependency('ygopen', ygopen_dep)
