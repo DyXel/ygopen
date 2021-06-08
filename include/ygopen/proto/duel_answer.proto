@@ -14,8 +14,6 @@ option optimize_for = LITE_RUNTIME;
 
 message Answer
 {
-	oneof t
-	{
-		a
-	}
+	// TODO.
+	bool placeholder = 1;
 }
