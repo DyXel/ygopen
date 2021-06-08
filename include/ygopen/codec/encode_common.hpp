@@ -34,6 +34,15 @@ class Place;
 namespace Codec
 {
 
+struct EncodeOneQueryResult
+{
+	// "View" into the QUERY_OVERLAY_CARD array of the parsed query, if any.
+	// Non-0 count means we have an array. Each card code is a uint32_t.
+	uint32_t overlays_count;
+	uint8_t const* overlays_ptr;
+	size_t bytes_read;
+};
+
 struct EncodeOneResult
 {
 	enum class State

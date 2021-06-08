@@ -327,7 +327,8 @@ inline auto unpack_zones(CField zones, CPlayer invert, Next next) noexcept
 } // namespace
 
 auto encode_one_query(uint8_t const* data,
-                      Proto::Duel::Msg::Query::Data& q) noexcept -> size_t
+                      Proto::Duel::Msg::Query::Data& q) noexcept
+	-> EncodeOneQueryResult
 {
 	enum CoreQuery : CQFlag
 	{
@@ -347,8 +348,7 @@ auto encode_one_query(uint8_t const* data,
 		QUERY_REASON_CARD = 0x2000U,
 		QUERY_EQUIP_CARD = 0x4000U,
 		QUERY_TARGET_CARD = 0x8000U,
-		// FIXME: We need to handle this *at least* for the replay encoder.
-		// 	QUERY_OVERLAY_CARD = 0x10000U,
+		QUERY_OVERLAY_CARD = 0x10000U,
 		QUERY_COUNTERS = 0x20000U,
 		QUERY_OWNER = 0x40000U,
 		QUERY_STATUS = 0x80000U,
@@ -360,6 +360,7 @@ auto encode_one_query(uint8_t const* data,
 		QUERY_COVER = 0x2000000U,
 		QUERY_END = 0x80000000U,
 	};
+	EncodeOneQueryResult result{};
 	decltype(data) const sentry = data;
 	for(;;)
 	{
@@ -370,7 +371,8 @@ auto encode_one_query(uint8_t const* data,
 		case QUERY_END:
 		{
 			log("finished parsing query");
-			return static_cast<size_t>(data - sentry);
+			result.bytes_read = static_cast<size_t>(data - sentry);
+			return result;
 		}
 // NOLINTNEXTLINE: No reflection :(
 #define X(qtype, v, type)                                 \
@@ -456,6 +458,13 @@ auto encode_one_query(uint8_t const* data,
 			auto const count = read<CCount>(data, "target card count");
 			for(CCount i = 0; i < count; i++)
 				read_loc_info(data, *relations->add_values());
+			break;
+		}
+		case QUERY_OVERLAY_CARD:
+		{
+			result.overlays_count = read<CCount>(data, "overlay count");
+			result.overlays_ptr = data;
+			skip(data, result.overlays_count * sizeof(uint32_t), "' codes");
 			break;
 		}
 		default:
@@ -926,17 +935,44 @@ auto encode_one(google::protobuf::Arena& arena, uint8_t const* data) noexcept
 			place->set_loc(loc_seq.first);
 			place->set_seq(loc_seq.second);
 			place->set_oseq(OSEQ_INVALID);
-			auto const q_size = encode_one_query(data, *query->mutable_data());
-			skip(data, q_size);
-			read_size += q_size;
+			auto eqr = encode_one_query(data, *query->mutable_data());
+			for(uint32_t i = 0; i < eqr.overlays_count; i++)
+			{
+				auto const code = read<CCode>(eqr.overlays_ptr, "overlay code");
+				auto* overlay_query = queries->Add();
+				auto* overlay_place = overlay_query->mutable_place();
+				auto* overlay_data = overlay_query->mutable_data();
+				overlay_place->set_con(controller);
+				overlay_place->set_loc(loc_seq.first);
+				overlay_place->set_seq(loc_seq.second);
+				overlay_place->set_oseq(i);
+				overlay_data->mutable_code()->set_value(code);
+			}
+			skip(data, eqr.bytes_read);
+			read_size += eqr.bytes_read;
 		}
 		break;
 	}
 	case MSG_UPDATE_CARD:
 	{
-		auto* query = create_queries()->Add();
-		read_loc_info<CSLoc, CSSeq, void>(data, *query->mutable_place());
-		skip(data, encode_one_query(data, *query->mutable_data()));
+		auto* queries = create_queries();
+		auto* query = queries->Add();
+		auto& place = *query->mutable_place();
+		read_loc_info<CSLoc, CSSeq, void>(data, place);
+		auto eqr = encode_one_query(data, *query->mutable_data());
+		for(uint32_t i = 0; i < eqr.overlays_count; i++)
+		{
+			auto const code = read<CCode>(eqr.overlays_ptr, "overlay code");
+			auto* overlay_query = queries->Add();
+			auto* overlay_place = overlay_query->mutable_place();
+			auto* overlay_data = overlay_query->mutable_data();
+			overlay_place->set_con(place.con());
+			overlay_place->set_loc(place.loc());
+			overlay_place->set_seq(place.seq());
+			overlay_place->set_oseq(i);
+			overlay_data->mutable_code()->set_value(code);
+		}
+		skip(data, eqr.bytes_read);
 		break;
 	}
 		/*
