@@ -50,21 +50,21 @@ struct EncodeOneResult
 		// The encoder doesn't know the message type.
 		// `bytes_read` has a unspecified value.
 		// `msg` is null.
-		STATE_UNKNOWN,
+		UNKNOWN,
 		// Buffer was correctly encoded.
 		// `bytes_read` has non-0 value.
 		// `msg` is non-null.
-		STATE_OK,
+		OK,
 		// The encoder knows the message type but will not encode it because of
 		// special treatment requirements.
 		// `bytes_read` has a unspecified value.
 		// `msg` is null.
-		STATE_SPECIAL,
+		SPECIAL,
 		// The encoder knows the message type but will not encode it because
 		// encoding this message alone yields no useful information.
 		// `bytes_read` has number of bytes that were read or skipped.
 		// `msg` is null.
-		STATE_SWALLOWED,
+		SWALLOWED,
 	} state;
 	size_t bytes_read;
 	Proto::Duel::Msg* msg;

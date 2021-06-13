@@ -486,32 +486,32 @@ auto encode_one(google::protobuf::Arena& arena, uint8_t const* data) noexcept
 	if(is_special_msg(core_msg))
 	{
 		log("special (not handling)");
-		result.state = EncodeOneResult::State::STATE_SPECIAL;
+		result.state = EncodeOneResult::State::SPECIAL;
 		return result;
 	}
 	using namespace google::protobuf;
 	using namespace YGOpen::Proto::Duel;
 	auto create_event = [&]() -> Msg::Event*
 	{
-		result.state = EncodeOneResult::State::STATE_OK;
+		result.state = EncodeOneResult::State::OK;
 		result.msg = Arena::CreateMessage<Msg>(&arena);
 		return result.msg->mutable_event();
 	};
 	auto create_queries = [&]() -> RepeatedPtrField<Msg::Query>*
 	{
-		result.state = EncodeOneResult::State::STATE_OK;
+		result.state = EncodeOneResult::State::OK;
 		result.msg = Arena::CreateMessage<Msg>(&arena);
 		return result.msg->mutable_queries();
 	};
 	auto create_request = [&]() -> Msg::Request*
 	{
-		result.state = EncodeOneResult::State::STATE_OK;
+		result.state = EncodeOneResult::State::OK;
 		result.msg = Arena::CreateMessage<Msg>(&arena);
 		return result.msg->mutable_request();
 	};
 	auto set_state_swallowed = [&result]()
 	{
-		result.state = EncodeOneResult::State::STATE_SWALLOWED;
+		result.state = EncodeOneResult::State::SWALLOWED;
 	};
 	// for: MSG_SUMMONING, MSG_SPSUMMONING and MSG_FLIPSUMMONING.
 	auto add_summoning = [&](Reason reason)
@@ -1057,7 +1057,7 @@ auto encode_one(google::protobuf::Arena& arena, uint8_t const* data) noexcept
 	 */
 	default:
 		log("unknown");
-		result.state = EncodeOneResult::State::STATE_UNKNOWN;
+		result.state = EncodeOneResult::State::UNKNOWN;
 	}
 	result.bytes_read = static_cast<size_t>(data - sentry);
 	log("bytes read: ", result.bytes_read);
@@ -1093,7 +1093,7 @@ auto encode_one_special(google::protobuf::Arena& arena, IEncodeContext& context,
 			finish->set_winner(static_cast<Controller>(winner));
 		else
 			finish->set_draw(true);
-		result.state = EncodeOneResult::State::STATE_OK;
+		result.state = EncodeOneResult::State::OK;
 		break;
 	}
 	case MSG_HINT:
@@ -1105,8 +1105,8 @@ auto encode_one_special(google::protobuf::Arena& arena, IEncodeContext& context,
 		read<uint8_t>(data, "skipped hint type");
 		read_con(data);
 		read<uint64_t>(data, "skipped hint data");
-		result.state = EncodeOneResult::State::STATE_SWALLOWED;
-		// 	result.state = EncodeOneResult::State::STATE_OK;
+		result.state = EncodeOneResult::State::SWALLOWED;
+		// 	result.state = EncodeOneResult::State::OK;
 		break;
 	}
 	case MSG_DECK_TOP:
@@ -1121,7 +1121,7 @@ auto encode_one_special(google::protobuf::Arena& arena, IEncodeContext& context,
 		place->set_oseq(OSEQ_INVALID);
 		read<CCode>(data, "skipped card code");
 		read<CPos>(data, "skipped position (current)");
-		result.state = EncodeOneResult::State::STATE_OK;
+		result.state = EncodeOneResult::State::OK;
 		break;
 	}
 	case MSG_MOVE:
@@ -1151,7 +1151,7 @@ auto encode_one_special(google::protobuf::Arena& arena, IEncodeContext& context,
 			// Corrupted move (core bug). Only handled because of older replays.
 			// NOTE: fix
 			// https://github.com/edo9300/ygopro-core/commit/36f2139582b
-			result.state = EncodeOneResult::State::STATE_SWALLOWED;
+			result.state = EncodeOneResult::State::SWALLOWED;
 		}
 		else if(is_prev_limbo)
 		{
@@ -1159,7 +1159,7 @@ auto encode_one_special(google::protobuf::Arena& arena, IEncodeContext& context,
 			auto* card = create_event()->mutable_card();
 			card->set_reason(reason);
 			*card->mutable_add()->add_places() = curr;
-			result.state = EncodeOneResult::State::STATE_OK;
+			result.state = EncodeOneResult::State::OK;
 		}
 		else if(is_curr_limbo)
 		{
@@ -1169,13 +1169,13 @@ auto encode_one_special(google::protobuf::Arena& arena, IEncodeContext& context,
 			auto* card = create_event()->mutable_card();
 			card->set_reason(reason);
 			*card->mutable_remove()->add_places() = prev;
-			result.state = EncodeOneResult::State::STATE_OK;
+			result.state = EncodeOneResult::State::OK;
 		}
 		else if(!is_curr_not_material && is_pile(curr))
 		{
 			// Attaching outside field.
 			context.xyz_mat_defer(prev);
-			result.state = EncodeOneResult::State::STATE_SWALLOWED;
+			result.state = EncodeOneResult::State::SWALLOWED;
 		}
 		else if(is_curr_not_material && !is_pile(curr))
 		{
@@ -1202,7 +1202,7 @@ auto encode_one_special(google::protobuf::Arena& arena, IEncodeContext& context,
 			auto* op = card->mutable_move()->add_ops();
 			*op->mutable_old_place() = prev;
 			*op->mutable_new_place() = curr;
-			result.state = EncodeOneResult::State::STATE_OK;
+			result.state = EncodeOneResult::State::OK;
 		}
 		else if(!is_prev_not_material && is_pile(prev))
 		{
@@ -1216,7 +1216,7 @@ auto encode_one_special(google::protobuf::Arena& arena, IEncodeContext& context,
 			*old_place = context.get_xyz_left(prev);
 			old_place->set_oseq(oseq);
 			*op->mutable_new_place() = curr;
-			result.state = EncodeOneResult::State::STATE_OK;
+			result.state = EncodeOneResult::State::OK;
 		}
 		else
 		{
@@ -1229,7 +1229,7 @@ auto encode_one_special(google::protobuf::Arena& arena, IEncodeContext& context,
 			// Card with xyz materials left the field.
 			if(!is_pile(prev) && is_pile(curr) && context.has_xyz_mat(prev))
 				context.xyz_left(curr, prev);
-			result.state = EncodeOneResult::State::STATE_OK;
+			result.state = EncodeOneResult::State::OK;
 		}
 		break;
 	}
@@ -1316,7 +1316,7 @@ auto encode_one_special(google::protobuf::Arena& arena, IEncodeContext& context,
 		if(splice_size > 0U)
 			add_op();
 		skip(data, buffer_size, "extra deck buffer bit's length");
-		result.state = EncodeOneResult::State::STATE_OK;
+		result.state = EncodeOneResult::State::OK;
 		break;
 	}
 	case MSG_DRAW:
@@ -1348,7 +1348,7 @@ auto encode_one_special(google::protobuf::Arena& arena, IEncodeContext& context,
 			to->set_oseq(OSEQ_INVALID);
 		}
 		op->set_reverse(true);
-		result.state = EncodeOneResult::State::STATE_OK;
+		result.state = EncodeOneResult::State::OK;
 		break;
 	}
 	case MSG_REVERSE_DECK:
@@ -1379,14 +1379,14 @@ auto encode_one_special(google::protobuf::Arena& arena, IEncodeContext& context,
 		};
 		add_op(CONTROLLER_0);
 		add_op(CONTROLLER_1);
-		result.state = EncodeOneResult::State::STATE_OK;
+		result.state = EncodeOneResult::State::OK;
 		break;
 	}
 	case MSG_MATCH_KILL:
 	{
 		// Core Mitigation: Just write this with MSG_WIN directly.
 		context.match_win_reason(read<uint32_t>(data, "match win reason"));
-		result.state = EncodeOneResult::State::STATE_SWALLOWED;
+		result.state = EncodeOneResult::State::SWALLOWED;
 		break;
 	}
 	case MSG_CARD_HINT:
@@ -1406,7 +1406,7 @@ auto encode_one_special(google::protobuf::Arena& arena, IEncodeContext& context,
 		data += CORE_LOC_INFO_SIZE;
 		/*auto type = */ read<CardHintType>(data, "card hint type");
 		/*auto value = */ read<uint64_t>(data, "card hint value");
-		result.state = EncodeOneResult::State::STATE_SWALLOWED;
+		result.state = EncodeOneResult::State::SWALLOWED;
 		break;
 	}
 	default:
