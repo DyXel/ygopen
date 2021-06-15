@@ -308,17 +308,6 @@ message Msg
 
 	message Request
 	{
-		message DeclareCode // TODO: Refactor this to use a properly structured flow.
-		{
-			// Amount of cards to declare (usually one).
-			uint32 count            = 1;
-			// List of Reverse Polish Notation operation codes used to
-			// compute a filtered list of elegible cards.
-			// NOTE: Empty list means ANY card code.
-			// NOTE: Opcodes from 'ygopro-core/common.h'.
-			repeated uint64 opcodes = 2;
-		}
-
 		message SelectAttribute
 		{
 			// Amount of attributes to declare.
@@ -382,6 +371,17 @@ message Msg
 				// must be removed from cards to satisfy selection.
 				Counter counter               = 10;
 			}
+		}
+
+		message SelectCardCode // TODO: Refactor this to use a properly structured flow.
+		{
+			// Amount of cards to declare (usually one).
+			uint32 count            = 1;
+			// List of Reverse Polish Notation operation codes used to
+			// compute a filtered list of elegible cards.
+			// NOTE: Empty list means ANY card code.
+			// NOTE: Opcodes from 'ygopro-core/common.h'.
+			repeated uint64 opcodes = 2;
 		}
 
 		message SelectEffect
@@ -486,17 +486,19 @@ message Msg
 		// TODO: Hints
 		oneof t
 		{
-			DeclareCode declare_code         = 2;
-			SelectAttribute select_attribute = 3;
-			SelectCard select_card           = 4;
-			SelectNumber select_number       = 5;
-			SelectPosition select_position   = 6;
-			SelectRace select_race           = 7;
-			bool select_rock_paper_scissor   = 8;
-			SelectToChain select_to_chain    = 9;
-			SelectYesNo select_yes_no        = 10;
-			SelectZone select_zone           = 11;
-			Sort sort                        = 12;
+			SelectAttribute select_attribute = 2;
+			SelectCard select_card           = 3;
+			SelectCardCode select_card_code  = 4;
+			SelectEffect select_effect       = 5;
+			SelectIdle select_idle           = 6;
+			SelectNumber select_number       = 7;
+			SelectPosition select_position   = 8;
+			SelectRace select_race           = 9;
+			bool select_rock_paper_scissor   = 10;
+			SelectToChain select_to_chain    = 11;
+			SelectYesNo select_yes_no        = 12;
+			SelectZone select_zone           = 13;
+			Sort sort                        = 14;
 		}
 	}
 
