@@ -532,9 +532,9 @@ auto encode_one(google::protobuf::Arena& arena, uint8_t const* data) noexcept
 	//
 	switch(core_msg)
 	{
-	/*
-	 * Event messages.
-	 */
+		/*
+		 * Event messages.
+		 */
 	case MSG_CONFIRM_DECKTOP:
 	case MSG_CONFIRM_EXTRATOP:
 	{
@@ -978,7 +978,65 @@ auto encode_one(google::protobuf::Arena& arena, uint8_t const* data) noexcept
 		/*
 		 * Request messages.
 		 */
-		// TODO.
+	case MSG_ANNOUNCE_ATTRIB:
+	{
+		auto* select_attribute = create_request()->mutable_select_attribute();
+		select_attribute->set_count(read<CSCount>(data, "count"));
+		select_attribute->set_attributes(read_attribute(data));
+		break;
+	}
+	case MSG_SELECT_OPTION:
+	{
+		auto* select_effect = create_request()->mutable_select_effect();
+		select_effect->set_count(1);
+		auto const count = read<CSCount>(data, "count");
+		for(CSCount i = 0; i < count; i++)
+			read_effect(data, *select_effect->add_effects());
+		break;
+	}
+	case MSG_ANNOUNCE_NUMBER:
+	{
+		auto* select_number = create_request()->mutable_select_number();
+		select_number->set_count(1);
+		auto const count = read<CSCount>(data, "count");
+		for(CSCount i = 0; i < count; i++)
+			select_number->add_numbers(read<uint64_t>(data));
+		break;
+	}
+	case MSG_SELECT_POSITION:
+	{
+		auto* select_position = create_request()->mutable_select_position();
+		select_position->set_count(1);
+		select_position->set_code(read<CCode>(data, "card code"));
+		select_position->set_position(read_pos<CSPos>(data));
+		break;
+	}
+	case MSG_ANNOUNCE_RACE:
+	{
+		auto* select_race = create_request()->mutable_select_race();
+		select_race->set_count(read<CSCount>(data, "count"));
+		select_race->set_race(read_race(data));
+		break;
+	}
+	case MSG_ROCK_PAPER_SCISSORS:
+	{
+		create_request()->set_select_rock_paper_scissor(true);
+		break;
+	}
+	case MSG_SELECT_EFFECTYN:
+	{
+		auto* select_yes_no = create_request()->mutable_select_yes_no();
+		select_yes_no->set_code(read<CCode>(data, "card code"));
+		read_loc_info(data, *select_yes_no->mutable_place());
+		read_effect(data, *select_yes_no->mutable_effect());
+		break;
+	}
+	case MSG_SELECT_YESNO:
+	{
+		auto* select_yes_no = create_request()->mutable_select_yes_no();
+		read_effect(data, *select_yes_no->mutable_effect());
+		break;
+	}
 		/*
 		 * Swallowed messages.
 		 */
