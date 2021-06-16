@@ -9,11 +9,52 @@ syntax = "proto3";
 
 package YGOpen.Proto.Duel;
 
+import "duel_enum.proto";
+
 option cc_enable_arenas = true;
 option optimize_for = LITE_RUNTIME;
 
 message Answer
 {
-	// TODO.
-	bool placeholder = 1;
+	message SelectCard
+	{
+		// TODO
+	}
+
+	message SelectIdle
+	{
+		// TODO
+	}
+
+	message SelectToChain
+	{
+		// TODO
+	}
+
+	message SelectZone
+	{
+		// TODO
+	}
+
+	message Sort
+	{
+		// TODO
+	}
+
+	oneof t
+	{
+		Attribute select_attribute                   = 1;
+		SelectCard select_card                       = 2;
+		uint32 select_card_code                      = 3;
+		uint32 select_effect                         = 4;
+		SelectIdle select_idle                       = 5;
+		uint32 select_number                         = 6;
+		Position select_position                     = 7;
+		Race select_race                             = 8;
+		RockPaperScissors select_rock_paper_scissors = 9;
+		SelectToChain select_to_chain                = 10;
+		bool select_yes_no                           = 11;
+		SelectZone select_zone                       = 12;
+		Sort sort                                    = 13;
+	}
 }

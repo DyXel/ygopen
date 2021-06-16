@@ -145,11 +145,11 @@ enum Reason
 	REASON_LINK        = 0x10000000;
 }
 
-enum RockPaperScissor
+enum RockPaperScissors
 {
-	ROCK_PAPER_SCISSOR_ROCK    = 0;
-	ROCK_PAPER_SCISSOR_PAPER   = 1;
-	ROCK_PAPER_SCISSOR_SCISSOR = 2;
+	ROCK_PAPER_SCISSORS_ROCK    = 0;
+	ROCK_PAPER_SCISSORS_PAPER   = 1;
+	ROCK_PAPER_SCISSORS_SCISSOR = 2;
 }
 
 enum Status

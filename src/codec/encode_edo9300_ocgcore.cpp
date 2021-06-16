@@ -766,7 +766,7 @@ auto encode_one(google::protobuf::Arena& arena, uint8_t const* data) noexcept
 		const auto hands_results = read<uint8_t>(data, "hand results");
 		auto to_rps = [](uint8_t v)
 		{
-			return static_cast<RockPaperScissor>(v);
+			return static_cast<RockPaperScissors>(v);
 		};
 		rps->add_values(to_rps((hands_results & 0x3) - 1));
 		rps->add_values(to_rps(((hands_results >> 2) & 0x3) - 1));

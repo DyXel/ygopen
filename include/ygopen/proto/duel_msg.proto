@@ -272,7 +272,7 @@ message Msg
 
 			message RPS
 			{
-				repeated RockPaperScissor values = 1;
+				repeated RockPaperScissors values = 1;
 			}
 
 			oneof t
