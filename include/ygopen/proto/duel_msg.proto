@@ -494,7 +494,7 @@ message Msg
 			SelectNumber select_number       = 7;
 			SelectPosition select_position   = 8;
 			SelectRace select_race           = 9;
-			bool select_rock_paper_scissor   = 10;
+			bool select_rock_paper_scissors  = 10;
 			SelectToChain select_to_chain    = 11;
 			SelectYesNo select_yes_no        = 12;
 			SelectZone select_zone           = 13;

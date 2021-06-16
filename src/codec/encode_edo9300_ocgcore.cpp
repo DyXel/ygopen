@@ -1020,7 +1020,7 @@ auto encode_one(google::protobuf::Arena& arena, uint8_t const* data) noexcept
 	}
 	case MSG_ROCK_PAPER_SCISSORS:
 	{
-		create_request()->set_select_rock_paper_scissor(true);
+		create_request()->set_select_rock_paper_scissors(true);
 		break;
 	}
 	case MSG_SELECT_EFFECTYN:
