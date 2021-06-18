@@ -5,10 +5,9 @@
  */
 #include "ygopen/codec/edo9300_ocgcore_encode.hpp"
 
-#include <google/protobuf/arena.h>
-
 #include <bitset>  // std::bitset
 #include <cstring> // std::memcpy
+#include <google/protobuf/arena.h>
 
 #include "ygopen/proto/duel/msg.hpp"
 
