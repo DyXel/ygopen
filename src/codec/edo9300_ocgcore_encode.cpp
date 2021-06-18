@@ -3,7 +3,7 @@
  *
  * SPDX-License-Identifier: AGPL-3.0-or-later
  */
-#include "ygopen/codec/encode_edo9300_ocgcore.hpp"
+#include "ygopen/codec/edo9300_ocgcore_encode.hpp"
 
 #include <google/protobuf/arena.h>
 
@@ -985,6 +985,21 @@ auto encode_one(google::protobuf::Arena& arena, uint8_t const* data) noexcept
 		select_attribute->set_attributes(read_attribute(data));
 		break;
 	}
+	case MSG_SELECT_CARD:
+	case MSG_SELECT_TRIBUTE:
+	case MSG_SELECT_COUNTER:
+	case MSG_SELECT_SUM:
+	case MSG_SELECT_UNSELECT_CARD:
+	{
+		// TODO: Spare my soul!
+		break;
+	}
+	case MSG_ANNOUNCE_CARD:
+	case MSG_ANNOUNCE_CARD_FILTER:
+	{
+		// TODO
+		break;
+	}
 	case MSG_SELECT_OPTION:
 	{
 		auto* select_effect = create_request()->mutable_select_effect();
@@ -992,6 +1007,12 @@ auto encode_one(google::protobuf::Arena& arena, uint8_t const* data) noexcept
 		auto const count = read<CSCount>(data, "count");
 		for(CSCount i = 0; i < count; i++)
 			read_effect(data, *select_effect->add_effects());
+		break;
+	}
+	case MSG_SELECT_BATTLECMD:
+	case MSG_SELECT_IDLECMD:
+	{
+		// TODO
 		break;
 	}
 	case MSG_ANNOUNCE_NUMBER:
@@ -1023,6 +1044,11 @@ auto encode_one(google::protobuf::Arena& arena, uint8_t const* data) noexcept
 		create_request()->set_select_rock_paper_scissors(true);
 		break;
 	}
+	case MSG_SELECT_CHAIN:
+	{
+		// TODO
+		break;
+	}
 	case MSG_SELECT_EFFECTYN:
 	{
 		auto* select_yes_no = create_request()->mutable_select_yes_no();
@@ -1035,6 +1061,12 @@ auto encode_one(google::protobuf::Arena& arena, uint8_t const* data) noexcept
 	{
 		auto* select_yes_no = create_request()->mutable_select_yes_no();
 		read_effect(data, *select_yes_no->mutable_effect());
+		break;
+	}
+	case MSG_SELECT_PLACE:
+	case MSG_SELECT_DISFIELD:
+	{
+		// TODO
 		break;
 	}
 		/*
