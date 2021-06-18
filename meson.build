@@ -6,6 +6,7 @@ protobuf_dep = dependency('protobuf-lite', version : '>=3.8.0')
 ygopen_inc = include_directories('include/')
 
 ygopen_src = files([
+	'src/codec/edo9300_ocgcore_decode.cpp',
 	'src/codec/edo9300_ocgcore_encode.cpp'
 ])
 

@@ -43,18 +43,31 @@ message Answer
 
 	oneof t
 	{
+		// Selected attribute or attributes OR'd together.
 		Attribute select_attribute                   = 1;
+		// TODO
 		SelectCard select_card                       = 2;
+		// Selected card code.
 		uint32 select_card_code                      = 3;
+		// Index of selected option/effect.
 		uint32 select_effect                         = 4;
+		// TODO
 		SelectIdle select_idle                       = 5;
+		// Index of selected number.
 		uint32 select_number                         = 6;
+		// Selected position or positions OR'd together.
 		Position select_position                     = 7;
+		// Selected race or races OR'd together.
 		Race select_race                             = 8;
+		// Self-explanatory.
 		RockPaperScissors select_rock_paper_scissors = 9;
+		// TODO
 		SelectToChain select_to_chain                = 10;
+		// Self-explanatory.
 		bool select_yes_no                           = 11;
+		// TODO
 		SelectZone select_zone                       = 12;
+		// TODO
 		Sort sort                                    = 13;
 	}
 }
