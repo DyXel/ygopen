@@ -23,17 +23,20 @@ message Answer
 
 	message SelectIdle
 	{
+		// NOTE: Using bitfield enumerations for the convenience of grouping in
+		// client applications. When setting an answer for a card only 1 value
+		// must be set at the time.
 		enum Action
 		{
-			ACTION_SHUFFLE = 0;
-			ACTION_PHASE = 1;
-			ACTION_ACTIVATE = 2;
-			ACTION_SUMMON = 3;
-			ACTION_SPSUMMON = 4;
-			ACTION_REPOSITION = 5;
-			ACTION_MSET = 6;
-			ACTION_SSET = 7;
-			ACTION_ATTACK = 8;
+			ACTION_SHUFFLE    = 0x0;
+			ACTION_PHASE      = 0x1;
+			ACTION_ACTIVATE   = 0x2;
+			ACTION_SUMMON     = 0x4;
+			ACTION_SPSUMMON   = 0x8;
+			ACTION_REPOSITION = 0x10;
+			ACTION_MSET       = 0x20;
+			ACTION_SSET       = 0x40;
+			ACTION_ATTACK     = 0x80;
 		}
 
 		message CardAction
@@ -60,7 +63,10 @@ message Answer
 	{
 		oneof t
 		{
+			// Don't chain anything. Invalid if forced is true.
 			bool no_op   = 1;
+			// Corresponds to the index the request message had for its repeated
+			// field.
 			uint32 index = 2;
 		}
 	}
