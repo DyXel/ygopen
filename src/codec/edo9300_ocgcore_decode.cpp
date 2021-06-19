@@ -29,9 +29,9 @@ auto decode_one_answer(Proto::Duel::Msg::Request const& request,
 {
 	auto response_i = [&](auto v) constexpr noexcept
 	{
-		out.resize(sizeof(uint32_t));
+		out.resize(sizeof(int32_t));
 		auto* ptr = out.data();
-		write(ptr, static_cast<uint32_t>(v));
+		write(ptr, static_cast<int32_t>(v));
 	};
 	using namespace Proto::Duel;
 	switch(request.t_case())
