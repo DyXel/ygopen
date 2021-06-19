@@ -148,7 +148,22 @@ auto decode_one_answer(Proto::Duel::Msg::Request const& request,
 	case Msg::Request::kSelectToChain:
 	{
 		assert(answer.t_case() == Answer::kSelectToChain);
-		// TODO
+		auto const& select_to_chain = answer.select_to_chain();
+		switch(select_to_chain.t_case())
+		{
+		case Answer::SelectToChain::kNoOp:
+		{
+			response_i(-1);
+			break;
+		}
+		case Answer::SelectToChain::kIndex:
+		{
+			response_i(select_to_chain.index());
+			break;
+		}
+		default:
+			break;
+		}
 		break;
 	}
 	case Msg::Request::kSelectYesNo:
