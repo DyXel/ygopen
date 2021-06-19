@@ -486,7 +486,7 @@ message Msg
 		}
 
 		// The controller/duelist/player who should answer this message.
-		Controller for = 1;
+		Controller replier = 1;
 		// TODO: Hints
 		oneof t
 		{

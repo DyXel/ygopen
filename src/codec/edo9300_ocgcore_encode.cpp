@@ -506,7 +506,9 @@ auto encode_one(google::protobuf::Arena& arena, uint8_t const* data) noexcept
 	{
 		result.state = EncodeOneResult::State::OK;
 		result.msg = Arena::CreateMessage<Msg>(&arena);
-		return result.msg->mutable_request();
+		auto* request = result.msg->mutable_request();
+		request->set_replier(read_con(data));
+		return request;
 	};
 	auto set_state_swallowed = [&result]()
 	{
