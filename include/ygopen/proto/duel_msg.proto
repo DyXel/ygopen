@@ -412,6 +412,10 @@ message Msg
 			repeated Place ssetable_cards       = 8;
 			// Cards that can declare an attack.
 			repeated Place can_attack_cards     = 9;
+			// NOTE: Contextual information used to generate proper response
+			// buffer from the decoder. DO NOT USE DIRECTLY; IT MIGHT GET
+			// REMOVED IN THE FUTURE.
+			bool is_battle_cmd = 15;
 		}
 
 		message SelectNumber

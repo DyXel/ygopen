@@ -23,12 +23,46 @@ message Answer
 
 	message SelectIdle
 	{
-		// TODO
+		enum Action
+		{
+			ACTION_SHUFFLE = 0;
+			ACTION_PHASE = 1;
+			ACTION_ACTIVATE = 2;
+			ACTION_SUMMON = 3;
+			ACTION_SPSUMMON = 4;
+			ACTION_REPOSITION = 5;
+			ACTION_MSET = 6;
+			ACTION_SSET = 7;
+			ACTION_ATTACK = 8;
+		}
+
+		message CardAction
+		{
+			// Any of the previously defined actions except shuffle or phase.
+			Action action = 1;
+			// Corresponds to the index the chosen card had on its respective
+			// repeated field in the SelectIdle request message.
+			uint32 index = 2;
+		}
+
+		oneof t
+		{
+			// Perform hand shuffling.
+			bool shuffle           = 1;
+			// Attempt to go to the selected phase.
+			Phase phase            = 2;
+			// Perform an action on a card.
+			CardAction card_action = 3;
+		}
 	}
 
 	message SelectToChain
 	{
-		// TODO
+		oneof t
+		{
+			bool no_op   = 1;
+			uint32 index = 2;
+		}
 	}
 
 	message SelectZone
