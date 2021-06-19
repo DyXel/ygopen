@@ -63,7 +63,61 @@ auto decode_one_answer(Proto::Duel::Msg::Request const& request,
 	case Msg::Request::kSelectIdle:
 	{
 		assert(answer.t_case() == Answer::kSelectIdle);
-		// TODO
+		auto const& select_idle = answer.select_idle();
+		switch(select_idle.t_case())
+		{
+		case Answer::SelectIdle::kShuffle:
+		{
+			response_i(8);
+			break;
+		}
+		case Answer::SelectIdle::kPhase:
+		{
+			auto const phase = select_idle.phase();
+			if(request.select_idle().is_battle_cmd())
+			{
+				if((phase & PHASE_MAIN_2) != 0)
+					response_i(2);
+				if((phase & PHASE_END) != 0)
+					response_i(3);
+			}
+			else
+			{
+				if((phase & PHASE_BATTLE) != 0)
+					response_i(6);
+				else if((phase & PHASE_END) != 0)
+					response_i(7);
+			}
+			break;
+		}
+		case Answer::SelectIdle::kCardAction:
+		{
+			auto const& card_action = select_idle.card_action();
+			auto const act = card_action.action();
+			uint32_t t = 0; // Type of action in the core.
+			uint32_t s = card_action.index();
+			assert(act != Answer::SelectIdle::ACTION_SHUFFLE);
+			assert(act != Answer::SelectIdle::ACTION_PHASE);
+			if(act == Answer::SelectIdle::ACTION_ACTIVATE)
+				t = (request.select_idle().is_battle_cmd()) ? 0U : 5U;
+			else if(act == Answer::SelectIdle::ACTION_SUMMON)
+				t = 0;
+			else if(act == Answer::SelectIdle::ACTION_SPSUMMON)
+				t = 1;
+			else if(act == Answer::SelectIdle::ACTION_REPOSITION)
+				t = 2;
+			else if(act == Answer::SelectIdle::ACTION_MSET)
+				t = 3;
+			else if(act == Answer::SelectIdle::ACTION_SSET)
+				t = 4;
+			else // act == Answer::SelectIdle::ACTION_ATTACK
+				t = 1;
+			response_i(((s & 0xFFFFU) << 16U) & (t & 0xFFFFU));
+			break;
+		}
+		default:
+			break;
+		}
 		break;
 	}
 	case Msg::Request::kSelectNumber:
