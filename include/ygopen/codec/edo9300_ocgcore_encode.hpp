@@ -14,10 +14,7 @@ auto encode_one_query(uint8_t const* data,
                       Proto::Duel::Msg_Query_Data& q) noexcept
 	-> EncodeOneQueryResult;
 
-auto encode_one(google::protobuf::Arena& arena, uint8_t const* data) noexcept
-	-> EncodeOneResult;
-
-auto encode_one_special(google::protobuf::Arena& arena, IEncodeContext& context,
+auto encode_one(google::protobuf::Arena& arena, IEncodeContext& context,
                         uint8_t const* data) noexcept -> EncodeOneResult;
 
 } // namespace YGOpen::Codec::Edo9300::OCGCore

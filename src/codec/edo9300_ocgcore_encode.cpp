@@ -475,19 +475,13 @@ auto encode_one_query(uint8_t const* data,
 	}
 }
 
-auto encode_one(google::protobuf::Arena& arena, uint8_t const* data) noexcept
-	-> EncodeOneResult
+auto encode_one(google::protobuf::Arena& arena, IEncodeContext& context,
+                        uint8_t const* data) noexcept -> EncodeOneResult
 {
 	decltype(data) const sentry = data;
 	auto const core_msg = read<OCGCoreMsgValue>(data);
 	EncodeOneResult result{};
 	log("core_msg: ", static_cast<int>(core_msg));
-	if(is_special_msg(core_msg))
-	{
-		log("special (not handling)");
-		result.state = EncodeOneResult::State::SPECIAL;
-		return result;
-	}
 	using namespace google::protobuf;
 	using namespace YGOpen::Proto::Duel;
 	auto create_event = [&]() -> Msg::Event*
@@ -1071,106 +1065,6 @@ auto encode_one(google::protobuf::Arena& arena, uint8_t const* data) noexcept
 		break;
 	}
 		/*
-		 * Swallowed messages.
-		 */
-	case MSG_RETRY:
-	{
-		set_state_swallowed();
-		break;
-	}
-	case MSG_SUMMONED:
-	case MSG_SPSUMMONED:
-	case MSG_FLIPSUMMONED:
-	{
-		set_state_swallowed();
-		break;
-	}
-	case MSG_CHAIN_SOLVING:
-	case MSG_CHAINED:
-	case MSG_CHAIN_NEGATED:
-	case MSG_CHAIN_DISABLED: // TODO: Put these into Event.Meta.ChainStatus.
-	{
-		set_state_swallowed();
-		read<uint8_t>(data, "chain num");
-		break;
-	}
-	case MSG_CHAIN_END:
-	{
-		set_state_swallowed();
-		break;
-	}
-	case MSG_BATTLE:
-	{
-		set_state_swallowed();
-		// atk + def + "flag"
-		constexpr size_t EXTRA_INFO =
-			sizeof(int32_t) + sizeof(int32_t) + sizeof(uint8_t);
-		skip(data, CORE_LOC_INFO_SIZE, "attacker place");
-		skip(data, EXTRA_INFO, "attacker extra info");
-		skip(data, CORE_LOC_INFO_SIZE, "attack_target place");
-		skip(data, EXTRA_INFO, "attack_target extra info");
-		break;
-	}
-	case MSG_EQUIP:
-	{
-		set_state_swallowed();
-		skip(data, CORE_LOC_INFO_SIZE, "equip card");
-		skip(data, CORE_LOC_INFO_SIZE, "equip target");
-		break;
-	}
-	case MSG_ATTACK_DISABLED:
-	{
-		set_state_swallowed();
-		break;
-	}
-	case MSG_DAMAGE_STEP_START:
-	case MSG_DAMAGE_STEP_END:
-	{
-		set_state_swallowed();
-		break;
-	}
-	case MSG_MISSED_EFFECT:
-	{
-		set_state_swallowed();
-		// TODO: Improve message in the core.
-		skip(data, CORE_LOC_INFO_SIZE, "who missed");
-		read<CCode>(data, "skipped card code");
-		break;
-	}
-	case MSG_AI_NAME:
-	{
-		set_state_swallowed();
-		skip(data, read<uint16_t>(data, "name length") + 1U, "ai name");
-		break;
-	}
-	/*
-	 * Unknown / Invalid core message.
-	 */
-	default:
-		log("unknown");
-		result.state = EncodeOneResult::State::UNKNOWN;
-	}
-	result.bytes_read = static_cast<size_t>(data - sentry);
-	log("bytes read: ", result.bytes_read);
-	return result;
-}
-
-auto encode_one_special(google::protobuf::Arena& arena, IEncodeContext& context,
-                        uint8_t const* data) noexcept -> EncodeOneResult
-{
-	EncodeOneResult result{};
-	decltype(data) const sentry = data;
-	auto const core_msg = read<OCGCoreMsgValue>(data);
-	log("core_msg: ", static_cast<int>(core_msg));
-	using namespace YGOpen::Proto::Duel;
-	auto create_event = [&]() -> Msg::Event*
-	{
-		result.msg = google::protobuf::Arena::CreateMessage<Msg>(&arena);
-		return result.msg->mutable_event();
-	};
-	switch(core_msg)
-	{
-		/*
 		 * Special messages.
 		 */
 	case MSG_WIN:
@@ -1500,13 +1394,85 @@ auto encode_one_special(google::protobuf::Arena& arena, IEncodeContext& context,
 		result.state = EncodeOneResult::State::SWALLOWED;
 		break;
 	}
+		/*
+		 * Swallowed messages.
+		 */
+	case MSG_RETRY:
+	{
+		set_state_swallowed();
+		break;
+	}
+	case MSG_SUMMONED:
+	case MSG_SPSUMMONED:
+	case MSG_FLIPSUMMONED:
+	{
+		set_state_swallowed();
+		break;
+	}
+	case MSG_CHAIN_SOLVING:
+	case MSG_CHAINED:
+	case MSG_CHAIN_NEGATED:
+	case MSG_CHAIN_DISABLED: // TODO: Put these into Event.Meta.ChainStatus.
+	{
+		set_state_swallowed();
+		read<uint8_t>(data, "chain num");
+		break;
+	}
+	case MSG_CHAIN_END:
+	{
+		set_state_swallowed();
+		break;
+	}
+	case MSG_BATTLE:
+	{
+		set_state_swallowed();
+		// atk + def + "flag"
+		constexpr size_t EXTRA_INFO =
+			sizeof(int32_t) + sizeof(int32_t) + sizeof(uint8_t);
+		skip(data, CORE_LOC_INFO_SIZE, "attacker place");
+		skip(data, EXTRA_INFO, "attacker extra info");
+		skip(data, CORE_LOC_INFO_SIZE, "attack_target place");
+		skip(data, EXTRA_INFO, "attack_target extra info");
+		break;
+	}
+	case MSG_EQUIP:
+	{
+		set_state_swallowed();
+		skip(data, CORE_LOC_INFO_SIZE, "equip card");
+		skip(data, CORE_LOC_INFO_SIZE, "equip target");
+		break;
+	}
+	case MSG_ATTACK_DISABLED:
+	{
+		set_state_swallowed();
+		break;
+	}
+	case MSG_DAMAGE_STEP_START:
+	case MSG_DAMAGE_STEP_END:
+	{
+		set_state_swallowed();
+		break;
+	}
+	case MSG_MISSED_EFFECT:
+	{
+		set_state_swallowed();
+		// TODO: Improve message in the core.
+		skip(data, CORE_LOC_INFO_SIZE, "who missed");
+		read<CCode>(data, "skipped card code");
+		break;
+	}
+	case MSG_AI_NAME:
+	{
+		set_state_swallowed();
+		skip(data, read<uint16_t>(data, "name length") + 1U, "ai name");
+		break;
+	}
+	/*
+	 * Unknown / Invalid core message.
+	 */
 	default:
-		// NOTE: Assuming that is_special_msg(core_msg) == true.
-#ifdef _MSC_VER
-		__assume(0);
-#else
-		__builtin_unreachable();
-#endif // _MSC_VER
+		log("unknown");
+		result.state = EncodeOneResult::State::UNKNOWN;
 	}
 	result.bytes_read = static_cast<size_t>(data - sentry);
 	log("bytes read: ", result.bytes_read);

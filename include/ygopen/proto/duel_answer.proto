@@ -91,7 +91,7 @@ message Answer
 		uint32 select_card_code                      = 3;
 		// Index of selected option/effect.
 		uint32 select_effect                         = 4;
-		// TODO
+		// Shuffle action, value of phase or "actioned" card.
 		SelectIdle select_idle                       = 5;
 		// Index of selected number.
 		uint32 select_number                         = 6;

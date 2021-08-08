@@ -55,13 +55,8 @@ struct EncodeOneResult
 		// `bytes_read` has non-0 value.
 		// `msg` is non-null.
 		OK,
-		// The encoder knows the message type but will not encode it because of
-		// special treatment requirements.
-		// `bytes_read` has a unspecified value.
-		// `msg` is null.
-		SPECIAL,
 		// The encoder knows the message type but will not encode it because
-		// encoding this message alone yields no useful information.
+		// encoding this message alone yields no useful information alone.
 		// `bytes_read` has number of bytes that were read or skipped.
 		// `msg` is null.
 		SWALLOWED,
