@@ -977,7 +977,7 @@ auto encode_one(google::protobuf::Arena& arena, IEncodeContext& context,
 	{
 		auto* select_attribute = create_request()->mutable_select_attribute();
 		select_attribute->set_count(read<CSCount>(data, "count"));
-		select_attribute->set_attributes(read_attribute(data));
+		select_attribute->set_attribute(read_attribute(data));
 		break;
 	}
 	case MSG_SELECT_CARD:

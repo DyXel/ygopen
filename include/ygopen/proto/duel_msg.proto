@@ -311,9 +311,9 @@ message Msg
 		message SelectAttribute
 		{
 			// Amount of attributes to declare.
-			uint32 count         = 1;
+			uint32 count        = 1;
 			// Attributes to choose from OR'd together.
-			Attribute attributes = 2;
+			Attribute attribute = 2;
 		}
 
 		message SelectCard // TODO: Refactor.
