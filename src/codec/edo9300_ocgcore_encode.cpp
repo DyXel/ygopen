@@ -1041,7 +1041,20 @@ auto encode_one(google::protobuf::Arena& arena, IEncodeContext& context,
 	}
 	case MSG_SELECT_CHAIN:
 	{
-		// TODO
+		auto* select_to_chain = create_request()->mutable_select_to_chain();
+		const bool triggering = (read<uint8_t>(data, "spe_count") & 0x7FU) > 0U;
+		select_to_chain->set_triggering(triggering);
+		select_to_chain->set_forced(read<uint8_t>(data, "forced") != 0U);
+		skip(data, 8U, "timing hints");
+		auto const count = read<CCount>(data, "number of chainable cards");
+		for(CCount i = 0; i < count; i++)
+		{
+			auto& act_card = *select_to_chain->add_activable_cards();
+			read<CCode>(data, "skipped card code");
+			read_loc_info(data, *act_card.mutable_place());
+			read_effect(data, *act_card.mutable_effect());
+			skip(data, 1U, "normal_resolve_reset");
+		}
 		break;
 	}
 	case MSG_SELECT_EFFECTYN:
