@@ -308,6 +308,13 @@ message Msg
 
 	message Request
 	{
+		message _ActCard
+		{
+			Place place   = 1;
+			Effect effect = 2;
+// 			int32 normal_resolve_reset = 3; // TODO
+		}
+
 		message SelectAttribute
 		{
 			// Amount of attributes to declare.
@@ -394,12 +401,17 @@ message Msg
 
 		message SelectIdle
 		{
+			message _AtkCard
+			{
+				Place place = 1;
+				bool can_attack_directly = 2;
+			}
 			// Can the shuffle action be executed? (usually shuffles hand).
 			bool can_shuffle                    = 1;
 			// Phases that can be selected OR'd together.
 			Phase available_phase               = 2;
 			// Cards that can activate an ignition effect.
-			repeated Place activable_cards      = 3;
+			repeated _ActCard activable_cards   = 3;
 			// Cards that can be either Normal or Tribute summoned.
 			repeated Place summonable_cards     = 4;
 			// Cards that can be Special summoned (inherent).
@@ -411,7 +423,7 @@ message Msg
 			// Cards that can be set on a Spell/Trap Zone.
 			repeated Place ssetable_cards       = 8;
 			// Cards that can declare an attack.
-			repeated Place can_attack_cards     = 9;
+			repeated _AtkCard can_attack_cards  = 9;
 			// NOTE: Contextual information used to generate proper response
 			// buffer from the decoder. DO NOT USE DIRECTLY; IT MIGHT GET
 			// REMOVED IN THE FUTURE.
@@ -450,8 +462,11 @@ message Msg
 			bool forced                    = 1;
 			// Are the effect(s) trigger?
 			bool triggering                = 2;
+			// TODO
+// 			Timing timing                  = 3;
+// 			Timing timing                  = 4;
 			// Cards that can be chained or resolved.
-			repeated Place activable_cards = 3;
+			repeated _ActCard activable_cards = 5;
 		}
 
 		message SelectYesNo
