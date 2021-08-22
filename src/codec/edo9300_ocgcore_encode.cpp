@@ -1005,9 +1005,106 @@ auto encode_one(google::protobuf::Arena& arena, IEncodeContext& context,
 		break;
 	}
 	case MSG_SELECT_BATTLECMD:
+	{
+		auto* select_idle = create_request()->mutable_select_idle();
+		select_idle->set_is_battle_cmd(true);
+		{ // Activable cards
+			auto const count = read<CCount>(data, "number of cards");
+			for(CCount i = 0; i < count; i++)
+			{
+				auto& card = *select_idle->add_activable_cards();
+				read<CCode>(data, "skipped card code");
+				read_loc_info<CSLoc, CSeq, void>(data, *card.mutable_place());
+				read_effect(data, *card.mutable_effect());
+				skip(data, 1U, "normal_resolve_reset");
+			}
+		}
+		{ // Can attack cards
+			auto const count = read<CCount>(data, "number of cards");
+			for(CCount i = 0; i < count; i++)
+			{
+				auto& card = *select_idle->add_can_attack_cards();
+				read<CCode>(data, "skipped card code");
+				read_loc_info<CSLoc, CSSeq, void>(data, *card.mutable_place());
+				card.set_can_attack_directly(read<uint8_t>(data) != 0U);
+			}
+		}
+		uint32_t phases = PHASE_UNSPECIFIED;
+		if(read<uint8_t>(data, "to_mp2") != 0U)
+			phases |= PHASE_MAIN_2;
+		if(read<uint8_t>(data, "to_ep") != 0U)
+			phases |= PHASE_END;
+		select_idle->set_available_phase(static_cast<Phase>(phases));
+		select_idle->set_can_shuffle(false);
+		break;
+	}
 	case MSG_SELECT_IDLECMD:
 	{
-		// TODO
+		auto* select_idle = create_request()->mutable_select_idle();
+		select_idle->set_is_battle_cmd(false);
+		{ // Summonable cards
+			auto const count = read<CCount>(data, "number of cards");
+			for(CCount i = 0; i < count; i++)
+			{
+				auto& place = *select_idle->add_summonable_cards();
+				read<CCode>(data, "skipped card code");
+				read_loc_info<CSLoc, CSeq, void>(data, place);
+			}
+		}
+		{ // Special Summonable cards
+			auto const count = read<CCount>(data, "number of cards");
+			for(CCount i = 0; i < count; i++)
+			{
+				auto& place = *select_idle->add_spsummonable_cards();
+				read<CCode>(data, "skipped card code");
+				read_loc_info<CSLoc, CSeq, void>(data, place);
+			}
+		}
+		{ // Repositionable cards
+			auto const count = read<CCount>(data, "number of cards");
+			for(CCount i = 0; i < count; i++)
+			{
+				auto& place = *select_idle->add_repositionable_cards();
+				read<CCode>(data, "skipped card code");
+				read_loc_info<CSLoc, CSSeq, void>(data, place);
+			}
+		}
+		{ // Msetable cards
+			auto const count = read<CCount>(data, "number of cards");
+			for(CCount i = 0; i < count; i++)
+			{
+				auto& place = *select_idle->add_msetable_cards();
+				read<CCode>(data, "skipped card code");
+				read_loc_info<CSLoc, CSeq, void>(data, place);
+			}
+		}
+		{ // Ssetable cards
+			auto const count = read<CCount>(data, "number of cards");
+			for(CCount i = 0; i < count; i++)
+			{
+				auto& place = *select_idle->add_ssetable_cards();
+				read<CCode>(data, "skipped card code");
+				read_loc_info<CSLoc, CSeq, void>(data, place);
+			}
+		}
+		{ // Activable cards
+			auto const count = read<CCount>(data, "number of cards");
+			for(CCount i = 0; i < count; i++)
+			{
+				auto& card = *select_idle->add_activable_cards();
+				read<CCode>(data, "skipped card code");
+				read_loc_info<CSLoc, CSeq, void>(data, *card.mutable_place());
+				read_effect(data, *card.mutable_effect());
+				skip(data, 1U, "normal_resolve_reset");
+			}
+		}
+		uint32_t phases = PHASE_UNSPECIFIED;
+		if(read<uint8_t>(data, "to_bp") != 0U)
+			phases |= PHASE_BATTLE;
+		if(read<uint8_t>(data, "to_ep") != 0U)
+			phases |= PHASE_END;
+		select_idle->set_available_phase(static_cast<Phase>(phases));
+		select_idle->set_can_shuffle(read<uint8_t>(data, "can shuffle") != 0U);
 		break;
 	}
 	case MSG_ANNOUNCE_NUMBER:
@@ -1045,15 +1142,17 @@ auto encode_one(google::protobuf::Arena& arena, IEncodeContext& context,
 		const bool triggering = (read<uint8_t>(data, "spe_count") & 0x7FU) > 0U;
 		select_to_chain->set_triggering(triggering);
 		select_to_chain->set_forced(read<uint8_t>(data, "forced") != 0U);
-		skip(data, 8U, "timing hints");
-		auto const count = read<CCount>(data, "number of chainable cards");
-		for(CCount i = 0; i < count; i++)
-		{
-			auto& act_card = *select_to_chain->add_activable_cards();
-			read<CCode>(data, "skipped card code");
-			read_loc_info(data, *act_card.mutable_place());
-			read_effect(data, *act_card.mutable_effect());
-			skip(data, 1U, "normal_resolve_reset");
+		skip(data, 8U, "timing hints"); // TODO
+		{ // Activable cards
+			auto const count = read<CCount>(data, "number of cards");
+			for(CCount i = 0; i < count; i++)
+			{
+				auto& card = *select_to_chain->add_activable_cards();
+				read<CCode>(data, "skipped card code");
+				read_loc_info(data, *card.mutable_place());
+				read_effect(data, *card.mutable_effect());
+				skip(data, 1U, "normal_resolve_reset");
+			}
 		}
 		break;
 	}
