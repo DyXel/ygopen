@@ -476,7 +476,7 @@ auto encode_one_query(uint8_t const* data,
 }
 
 auto encode_one(google::protobuf::Arena& arena, IEncodeContext& context,
-                        uint8_t const* data) noexcept -> EncodeOneResult
+                uint8_t const* data) noexcept -> EncodeOneResult
 {
 	decltype(data) const sentry = data;
 	auto const core_msg = read<OCGCoreMsgValue>(data);
@@ -1142,7 +1142,7 @@ auto encode_one(google::protobuf::Arena& arena, IEncodeContext& context,
 		const bool triggering = (read<uint8_t>(data, "spe_count") & 0x7FU) > 0U;
 		select_to_chain->set_triggering(triggering);
 		select_to_chain->set_forced(read<uint8_t>(data, "forced") != 0U);
-		skip(data, 8U, "timing hints"); // TODO
+		skip(data, 8U, "timing hints");
 		{ // Activable cards
 			auto const count = read<CCount>(data, "number of cards");
 			for(CCount i = 0; i < count; i++)
