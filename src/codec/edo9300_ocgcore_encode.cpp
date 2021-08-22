@@ -1173,7 +1173,13 @@ auto encode_one(google::protobuf::Arena& arena, IEncodeContext& context,
 	case MSG_SELECT_PLACE:
 	case MSG_SELECT_DISFIELD:
 	{
-		// TODO
+		auto* request = create_request();
+		auto* select_zone = request->mutable_select_zone();
+		select_zone->set_blocking(core_msg == MSG_SELECT_DISFIELD);
+		select_zone->set_count(read<CSCount>(data, "count"));
+		auto const replier = static_cast<CPlayer>(request->replier());
+		unpack_zones(read<CField>(data, "zones"), replier,
+		             [&]() { return select_zone->add_places(); });
 		break;
 	}
 		/*

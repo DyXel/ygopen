@@ -9,6 +9,7 @@ syntax = "proto3";
 
 package YGOpen.Proto.Duel;
 
+import "duel_data.proto";
 import "duel_enum.proto";
 
 option cc_enable_arenas = true;
@@ -73,7 +74,7 @@ message Answer
 
 	message SelectZone
 	{
-		// TODO
+		repeated Place places = 1;
 	}
 
 	message Sort
