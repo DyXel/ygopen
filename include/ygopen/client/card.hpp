@@ -69,9 +69,9 @@ struct BasicCard
 	{}
 
 	inline ~BasicCard() noexcept = default;
-	BasicCard(const BasicCard&) = delete;
+	BasicCard(BasicCard const&) = delete;
 	constexpr BasicCard(BasicCard&&) noexcept = default;
-	auto operator=(const BasicCard&) -> BasicCard& = delete;
+	auto operator=(BasicCard const&) -> BasicCard& = delete;
 	constexpr auto operator=(BasicCard&&) noexcept -> BasicCard& = default;
 
 	// Query data.
