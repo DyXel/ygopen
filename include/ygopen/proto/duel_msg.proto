@@ -10,7 +10,6 @@ syntax = "proto3";
 package YGOpen.Proto.Duel;
 
 import "duel_data.proto";
-import "duel_enum.proto";
 
 option cc_enable_arenas = true;
 option optimize_for = LITE_RUNTIME;
@@ -23,7 +22,7 @@ message Msg
 		{
 			message Exchange
 			{
-				Controller con     = 1;
+				int32 con          = 1;
 				Card.Remove remove = 2;
 				Card.Add add       = 3;
 				Pile.Resize resize = 4;
@@ -90,7 +89,7 @@ message Msg
 				repeated Place current_places  = 2;
 			}
 
-			Reason reason                  = 1;
+			uint64 reason                  = 1;
 			oneof t
 			{
 				Add add                    = 2;
@@ -117,20 +116,20 @@ message Msg
 			uint32 match_win_reason = 2;
 			oneof t
 			{
-				Controller winner   = 3;
+				int32 winner        = 3;
 				bool draw           = 4;
 			}
 		}
 
 		message LP
 		{
-			Controller controller = 1;
+			int32 controller   = 1;
 			oneof t
 			{
-				uint32 become     = 2; // =
-				uint32 damage     = 3; // -
-				uint32 pay        = 4; // -
-				uint32 recover    = 5; // +
+				uint32 become  = 2; // =
+				uint32 damage  = 3; // -
+				uint32 pay     = 4; // -
+				uint32 recover = 5; // +
 			}
 		}
 
@@ -147,18 +146,18 @@ message Msg
 			{
 				CHAIN_STATUS_SOLVING = 0;
 				CHAIN_STATUS_NEGATED = 1;
-				CHAIN_STATUS_SOLVED = 2;
+				CHAIN_STATUS_SOLVED  = 2;
 			}
 
 			message Confirm
 			{
-				Reason reason         = 1;
+				uint64 reason         = 1;
 				repeated Place places = 2;
 			}
 
 			message Description
 			{
-				Controller con    = 1;
+				int32 con         = 1;
 				oneof t
 				{
 					Effect add    = 2;
@@ -166,7 +165,7 @@ message Msg
 				}
 			}
 
-			message FlashCard
+			message FlashCard // FIXME: maybe change to DisplayCard?
 			{
 				uint32 code     = 1;
 				bool has_number = 2;
@@ -181,7 +180,7 @@ message Msg
 			message Selection
 			{
 				Place selector                 = 1;
-				Reason reason                  = 2;
+				uint64 reason                  = 2;
 				repeated Place selected_places = 3;
 			}
 
@@ -192,7 +191,7 @@ message Msg
 
 			message Update
 			{
-				Reason reason         = 1;
+				uint64 reason         = 1;
 				repeated Place places = 2;
 			}
 
@@ -247,7 +246,7 @@ message Msg
 				repeated _Operation ops = 1;
 			}
 
-			Reason reason         = 1;
+			uint64 reason         = 1;
 			oneof t
 			{
 				Exchange exchange = 2;
@@ -260,19 +259,19 @@ message Msg
 		{
 			message Coin
 			{
-				Controller actor     = 1;
+				int32 actor          = 1;
 				repeated bool values = 2;
 			}
 
 			message Dice
 			{
-				Controller actor       = 1;
+				int32 actor            = 1;
 				repeated uint32 values = 2;
 			}
 
 			message RPS
 			{
-				repeated RockPaperScissors values = 1;
+				repeated int32 values = 1;
 			}
 
 			oneof t
@@ -295,11 +294,11 @@ message Msg
 			Board board            = 1;
 			Card card              = 2;
 			ChainStack chain_stack = 3;
-			Controller next_turn   = 4;
+			int32 next_turn        = 4;
 			Finish finish          = 5;
 			LP lp                  = 6;
 			Meta meta              = 7;
-			Phase next_phase       = 8;
+			uint32 next_phase      = 8;
 			Pile pile              = 9;
 			Result result          = 10;
 			ZoneBlock zone_block   = 11;
@@ -318,9 +317,9 @@ message Msg
 		message SelectAttribute
 		{
 			// Amount of attributes to declare.
-			uint32 count        = 1;
+			uint32 count     = 1;
 			// Attributes to choose from OR'd together.
-			Attribute attribute = 2;
+			uint32 attribute = 2;
 		}
 
 		message SelectCard // TODO: Refactor.
@@ -409,7 +408,7 @@ message Msg
 			// Can the shuffle action be executed? (usually shuffles hand).
 			bool can_shuffle                    = 1;
 			// Phases that can be selected OR'd together.
-			Phase available_phase               = 2;
+			uint32 available_phase              = 2;
 			// Cards that can activate an ignition effect.
 			repeated _ActCard activable_cards   = 3;
 			// Cards that can be either Normal or Tribute summoned.
@@ -441,11 +440,11 @@ message Msg
 		message SelectPosition
 		{
 			// Amount of positions to select (usually one).
-			uint32 count      = 1;
+			uint32 count    = 1;
 			// Card code associated with this selection (used to display picture).
-			uint32 code       = 2;
+			uint32 code     = 2;
 			// Positions to choose from OR'd together.
-			Position position = 3;
+			uint32 position = 3;
 		}
 
 		message SelectRace
@@ -453,15 +452,15 @@ message Msg
 			// Amount of races to select.
 			uint32 count = 1;
 			// Races to choose from OR'd together.
-			Race race    = 2;
+			uint64 race  = 2;
 		}
 
 		message SelectToChain
 		{
 			// Are the effect(s) mandatory?
-			bool forced                    = 1;
+			bool forced                       = 1;
 			// Are the effect(s) trigger?
-			bool triggering                = 2;
+			bool triggering                   = 2;
 			// TODO
 // 			Timing timing                  = 3;
 // 			Timing timing                  = 4;
@@ -501,7 +500,7 @@ message Msg
 		}
 
 		// The controller/duelist/player who should answer this message.
-		Controller replier = 1;
+		int32 replier = 1;
 		// TODO: Hints
 		oneof t
 		{
@@ -527,7 +526,7 @@ message Msg
 		{
 			message QOwner // QUERY_OWNER
 			{
-				Controller value = 1;
+				int32 value = 1;
 			}
 			QOwner owner = 1;
 
@@ -545,7 +544,7 @@ message Msg
 
 			message QPosition // QUERY_POSITION
 			{
-				Position value = 1;
+				uint32 value = 1;
 			}
 			QPosition position = 4;
 
@@ -557,7 +556,7 @@ message Msg
 
 			message QStatus // QUERY_STATUS (negated/properly summoned/etc)
 			{
-				Status value = 1;
+				uint32 value = 1;
 			}
 			QStatus status = 6;
 
@@ -575,7 +574,7 @@ message Msg
 
 			message QType // QUERY_TYPE
 			{
-				Type value = 1;
+				uint32 value = 1;
 			}
 			QType type = 9;
 
@@ -593,13 +592,13 @@ message Msg
 
 			message QAttribute // QUERY_ATTRIBUTE
 			{
-				Attribute value = 1;
+				uint32 value = 1;
 			}
 			QAttribute attribute = 12;
 
 			message QRace // QUERY_RACE
 			{
-				Race value = 1;
+				uint64 value = 1;
 			}
 			QRace race = 13;
 
@@ -647,7 +646,7 @@ message Msg
 
 			message QLinkArrow // QUERY_LINK
 			{
-				LinkArrow value = 1;
+				uint32 value = 1;
 			}
 			QLinkArrow link_arrow = 21;
 

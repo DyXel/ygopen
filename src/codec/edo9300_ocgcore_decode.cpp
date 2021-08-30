@@ -5,8 +5,9 @@
  */
 #include "ygopen/codec/edo9300_ocgcore_decode.hpp"
 
-#include "ygopen/proto/duel/answer.hpp"
-#include "ygopen/proto/duel/msg.hpp"
+#include <ygopen/duel/constants/phase.hpp>
+#include <ygopen/proto/duel/answer.hpp>
+#include <ygopen/proto/duel/msg.hpp>
 
 namespace YGOpen::Codec::Edo9300::OCGCore
 {
@@ -69,6 +70,7 @@ auto decode_one_answer(Proto::Duel::Msg::Request const& request,
 		}
 		case Answer::SelectIdle::kPhase:
 		{
+			using namespace YGOpen::Duel;
 			auto const phase = select_idle.phase();
 			if(request.select_idle().is_battle_cmd())
 			{

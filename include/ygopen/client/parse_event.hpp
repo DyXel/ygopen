@@ -6,8 +6,8 @@
 #ifndef YGOPEN_CLIENT_PARSE_EVENT_HPP
 #define YGOPEN_CLIENT_PARSE_EVENT_HPP
 #include <utility>
-
-#include "ygopen/proto/duel/msg.hpp"
+#include <ygopen/duel/constants/controller.hpp>
+#include <ygopen/proto/duel/msg.hpp>
 
 namespace YGOpen::Client
 {
@@ -16,7 +16,8 @@ template<typename Board>
 auto parse_event(Board& board, Proto::Duel::Msg::Event const& event) noexcept
 	-> void
 {
-	using namespace Proto::Duel;
+	using namespace YGOpen::Duel;
+	using namespace YGOpen::Proto::Duel;
 	switch(event.t_case())
 	{
 	case Msg::Event::kBoard:
@@ -132,13 +133,13 @@ auto parse_event(Board& board, Proto::Duel::Msg::Event const& event) noexcept
 	case Msg::Event::kNextTurn:
 	{
 		board.turn().set(board.turn().get() + 1);
-		board.turn_controller().set(event.next_turn());
+		board.turn_controller().set(Controller{event.next_turn()});
 		break;
 	}
 	case Msg::Event::kLp:
 	{
 		auto const& lp = event.lp();
-		auto& blp = board.lp(lp.controller());
+		auto& blp = board.lp(Controller{lp.controller()});
 		switch(lp.t_case())
 		{
 		case Msg::Event::LP::kBecome:
@@ -168,7 +169,7 @@ auto parse_event(Board& board, Proto::Duel::Msg::Event const& event) noexcept
 	}
 	case Msg::Event::kNextPhase:
 	{
-		board.phase().set(event.next_phase());
+		board.phase().set(Phase{event.next_phase()});
 		break;
 	}
 	case Msg::Event::kPile:

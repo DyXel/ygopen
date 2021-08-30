@@ -5,7 +5,8 @@
  */
 #ifndef YGOPEN_CLIENT_BOARD_HPP
 #define YGOPEN_CLIENT_BOARD_HPP
-#include "ygopen/proto/duel/msg.hpp"
+#include <ygopen/duel/constants_fwd.hpp>
+#include <ygopen/proto/duel/msg.hpp>
 
 namespace YGOpen::Client
 {
@@ -16,9 +17,9 @@ class BasicBoard
 public:
 	using ChainStackType = std::vector<Proto::Duel::Chain>;
 	using TurnType = uint32_t;
-	using TurnControllerType = Proto::Duel::Controller;
+	using TurnControllerType = Duel::Controller;
 	using LPType = uint32_t;
-	using PhaseType = Proto::Duel::Phase;
+	using PhaseType = Duel::Phase;
 	using BlockedZonesType = std::vector<Proto::Duel::Place>;
 
 	explicit constexpr BasicBoard() noexcept = default;
@@ -59,7 +60,7 @@ public:
 		return turn_controller_;
 	}
 
-	constexpr auto lp(Proto::Duel::Controller con) const noexcept
+	constexpr auto lp(YGOpen::Duel::Controller con) const noexcept
 		-> Wrapper<LPType> const&
 	{
 		return lp_[static_cast<size_t>(con)];
@@ -92,7 +93,7 @@ public:
 		return turn_controller_;
 	}
 
-	constexpr auto lp(Proto::Duel::Controller con) noexcept -> Wrapper<LPType>&
+	constexpr auto lp(YGOpen::Duel::Controller con) noexcept -> Wrapper<LPType>&
 	{
 		return lp_[static_cast<size_t>(con)];
 	}

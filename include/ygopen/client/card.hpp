@@ -7,8 +7,8 @@
 #define YGOPEN_CLIENT_CARD_HPP
 #include <cstdint>
 #include <vector>
-
-#include "ygopen/proto/duel/data.hpp"
+#include <ygopen/duel/constants_fwd.hpp>
+#include <ygopen/proto/duel/data.hpp>
 
 namespace YGOpen::Client
 {
@@ -16,24 +16,24 @@ namespace YGOpen::Client
 template<template<typename /*Wrapped*/> typename Wrapper>
 struct BasicCard
 {
-	using OwnerType = Proto::Duel::Controller;
+	using OwnerType = Duel::Controller;
 	using IsPublicType = bool;
 	using IsHiddenType = bool;
-	using PositionType = Proto::Duel::Position;
+	using PositionType = Duel::Position;
 	using CoverType = uint32_t;
-	using StatusType = Proto::Duel::Status;
+	using StatusType = Duel::Status;
 	using CodeType = CoverType;
 	using AliasType = CodeType;
-	using TypeType = Proto::Duel::Type;
+	using TypeType = Duel::Type;
 	using LevelType = uint32_t;
 	using XyzRankType = uint32_t;
-	using AttributeType = Proto::Duel::Attribute;
-	using RaceType = Proto::Duel::Race;
+	using AttributeType = Duel::Attribute;
+	using RaceType = Duel::Race;
 	using AtkDefType = int32_t;
 	using PendLScaleType = uint32_t;
 	using PendRScaleType = PendLScaleType;
 	using LinkRateType = uint32_t;
-	using LinkArrowType = Proto::Duel::LinkArrow;
+	using LinkArrowType = Duel::LinkArrow;
 	using CountersType = std::vector<Proto::Duel::Counter>;
 	using EquippedType = Proto::Duel::Place;
 	using RelationsType = std::vector<Proto::Duel::Place>;

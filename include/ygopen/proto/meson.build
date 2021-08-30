@@ -4,7 +4,6 @@ protoc_gen = generator(protoc, output : ['@BASENAME@.pb.cc', '@BASENAME@.pb.h'],
 ygopen_proto_src = files([
 	'duel_answer.proto',
 	'duel_data.proto',
-	'duel_enum.proto',
 	'duel_msg.proto',
 	'replay.proto'
 ])

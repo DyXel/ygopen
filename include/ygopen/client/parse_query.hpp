@@ -6,8 +6,7 @@
 #ifndef YGOPEN_CLIENT_PARSE_QUERY_HPP
 #define YGOPEN_CLIENT_PARSE_QUERY_HPP
 #include <limits>
-
-#include "ygopen/proto/duel/msg.hpp"
+#include <ygopen/proto/duel/msg.hpp>
 
 namespace YGOpen::Client
 {
@@ -78,23 +77,24 @@ auto parse_query(Frame& frame, Proto::Duel::Msg::Query const& query) noexcept
 	auto const& data = query.data();
 	auto& card = frame.card(query.place());
 	// NOLINTNEXTLINE: No reflection :(
-#define X(v, q)                                      \
-	do                                               \
-	{                                                \
-		if(data.has_##v())                           \
-		{                                            \
-			if constexpr(use_cache)                  \
-			{                                        \
-				if(card.v.get() == data.v().value()) \
-					hits |= (QueryCacheHit::q);      \
-				else                                 \
-					card.v.set(data.v().value());    \
-			}                                        \
-			else                                     \
-			{                                        \
-				card.v.set(data.v().value());        \
-			}                                        \
-		}                                            \
+#define X(v, q)                                                     \
+	do                                                              \
+	{                                                               \
+		if(data.has_##v())                                          \
+		{                                                           \
+			using ValueType = typename decltype(card.v)::ValueType; \
+			if constexpr(use_cache)                                 \
+			{                                                       \
+				if(card.v.get() == data.v().value())                \
+					hits |= (QueryCacheHit::q);                     \
+				else                                                \
+					card.v.set(ValueType{data.v().value()});        \
+			}                                                       \
+			else                                                    \
+			{                                                       \
+				card.v.set(ValueType{data.v().value()});            \
+			}                                                       \
+		}                                                           \
 	} while(0)
 	X(owner, OWNER);
 	X(is_public, IS_PUBLIC);

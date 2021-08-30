@@ -5,7 +5,7 @@
  */
 #ifndef YGOPEN_CLIENT_FRAME_LIMBO_HPP
 #define YGOPEN_CLIENT_FRAME_LIMBO_HPP
-#include "frame.hpp"
+#include <ygopen/client/frame.hpp>
 
 namespace YGOpen::Client
 {
@@ -157,7 +157,7 @@ private:
 
 	constexpr auto swap_clear_op_(ClearOp& clear_op) noexcept -> void
 	{
-		using namespace Proto::Duel;
+		using namespace YGOpen::Duel;
 		auto swap_multi_pile = [this](Location loc, MultiPile& p)
 		{
 			for(auto con : {CONTROLLER_0, CONTROLLER_1})

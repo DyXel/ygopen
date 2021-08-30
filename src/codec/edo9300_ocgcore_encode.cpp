@@ -8,8 +8,11 @@
 #include <bitset>  // std::bitset
 #include <cstring> // std::memcpy
 #include <google/protobuf/arena.h>
-
-#include "ygopen/proto/duel/msg.hpp"
+#include <ygopen/duel/constants/controller.hpp>
+#include <ygopen/duel/constants/location.hpp>
+#include <ygopen/duel/constants/phase.hpp>
+#include <ygopen/duel/constants/reason.hpp>
+#include <ygopen/proto/duel/msg.hpp>
 
 // #define YGOPEN_ENCODER_DEBUG
 
@@ -42,6 +45,8 @@ using CSPos = uint8_t;   // Position type.
 
 constexpr auto CORE_LOC_INFO_SIZE =
 	sizeof(CPlayer) + sizeof(CSLoc) + sizeof(CSeq) + sizeof(CPos);
+
+constexpr int OSEQ_INVALID = -1;
 
 #include "ocgcore_messages.inl"
 
@@ -99,8 +104,7 @@ constexpr auto read(uint8_t const*& ptr, Args&&... args) noexcept -> T
 
 constexpr auto read_attribute(uint8_t const*& ptr) noexcept -> auto
 {
-	using namespace YGOpen::Proto::Duel;
-	return static_cast<Attribute>(read<uint32_t>(ptr, "attribute"));
+	return read<uint32_t>(ptr, "attribute");
 }
 
 template<typename... Args>
@@ -111,52 +115,44 @@ constexpr auto read_bool(uint8_t const*& ptr, Args&&... args) noexcept -> bool
 
 constexpr auto read_con(uint8_t const*& ptr) noexcept -> auto
 {
-	using namespace YGOpen::Proto::Duel;
-	return static_cast<Controller>(read<CPlayer>(ptr, "player"));
+	return static_cast<Duel::Controller>(read<CPlayer>(ptr, "player"));
 }
 
 constexpr auto read_link_arrow(uint8_t const*& ptr) noexcept -> auto
 {
-	using namespace YGOpen::Proto::Duel;
-	return static_cast<LinkArrow>(read<uint32_t>(ptr, "link arrow"));
+	return read<uint32_t>(ptr, "link arrow");
 }
 
 template<typename T = CLoc>
 constexpr auto read_loc(uint8_t const*& ptr) noexcept -> auto
 {
-	using namespace YGOpen::Proto::Duel;
-	return static_cast<Location>(read<T>(ptr, "location"));
+	return static_cast<Duel::Location>(read<T>(ptr, "location"));
 }
 
 template<typename T = CPos>
 constexpr auto read_pos(uint8_t const*& ptr) noexcept -> auto
 {
-	using namespace YGOpen::Proto::Duel;
-	return static_cast<Position>(read<T>(ptr, "position"));
+	return static_cast<uint32_t>(read<T>(ptr, "position"));
 }
 
 constexpr auto read_race(uint8_t const*& ptr) noexcept -> auto
 {
-	using namespace YGOpen::Proto::Duel;
-	return static_cast<Race>(read<uint32_t>(ptr, "race"));
+	return static_cast<uint64_t>(read<uint32_t>(ptr, "race"));
 }
 
 constexpr auto read_reason(uint8_t const*& ptr) noexcept -> auto
 {
-	using namespace YGOpen::Proto::Duel;
-	return static_cast<Reason>(read<uint32_t>(ptr, "reason"));
+	return static_cast<uint64_t>(read<uint32_t>(ptr, "reason"));
 }
 
 constexpr auto read_status(uint8_t const*& ptr) noexcept -> auto
 {
-	using namespace YGOpen::Proto::Duel;
-	return static_cast<Status>(read<uint32_t>(ptr, "status"));
+	return read<uint32_t>(ptr, "status");
 }
 
 constexpr auto read_type(uint8_t const*& ptr) noexcept -> auto
 {
-	using namespace YGOpen::Proto::Duel;
-	return static_cast<Type>(read<uint32_t>(ptr, "type"));
+	return read<uint32_t>(ptr, "type");
 }
 
 inline auto read_counter(uint8_t const*& ptr,
@@ -179,7 +175,7 @@ template<typename Loc, typename Seq>
 constexpr auto fix_spell_loc_seq(Loc loc, Seq seq) noexcept
 	-> std::pair<Loc, Seq>
 {
-	using namespace YGOpen::Proto::Duel;
+	using namespace YGOpen::Duel;
 	constexpr Seq SPELL_ZONE_LIMIT = 4U;
 	constexpr Seq FIELD_ZONE_SEQUENCE = 5U;
 	if((loc & LOCATION_SPELL_ZONE) && seq > SPELL_ZONE_LIMIT)
@@ -202,11 +198,11 @@ template<typename Loc = CSLoc, typename Seq = CSeq, typename Pos = CPos>
 inline auto read_loc_info(uint8_t const*& ptr,
                           YGOpen::Proto::Duel::Place& place) noexcept -> void
 {
-	using namespace YGOpen::Proto::Duel;
+	using namespace YGOpen::Duel;
 	constexpr Loc LOCATION_OVERLAY = 0x80U;
 	place.set_con(read_con(ptr));
 	auto const loc = read_loc<Loc>(ptr);
-	place.set_loc(static_cast<Location>(loc & (~LOCATION_OVERLAY)));
+	place.set_loc(loc & (~LOCATION_OVERLAY));
 	if constexpr(!std::is_void<Seq>())
 	{
 		auto const loc_seq =
@@ -288,7 +284,7 @@ inline auto unpack_zones(CField zones, CPlayer invert, Next next) noexcept
 	static constexpr CField FIELD_MZONE_COUNT = 7U; // 5 MMZ + 2 EMZ.
 	static constexpr CField FIELD_SZONE_COUNT = 5U;
 	static constexpr CField FIELD_PZONE_COUNT = 2U;
-	using namespace YGOpen::Proto::Duel;
+	using namespace YGOpen::Duel;
 	auto add_place = [&](CPlayer con, Location loc, CSeq seq)
 	{
 		auto* place = next();
@@ -483,6 +479,7 @@ auto encode_one(google::protobuf::Arena& arena, IEncodeContext& context,
 	EncodeOneResult result{};
 	log("core_msg: ", static_cast<int>(core_msg));
 	using namespace google::protobuf;
+	using namespace YGOpen::Duel;
 	using namespace YGOpen::Proto::Duel;
 	auto create_event = [&]() -> Msg::Event*
 	{
@@ -1219,7 +1216,7 @@ auto encode_one(google::protobuf::Arena& arena, IEncodeContext& context,
 			create_event()->mutable_meta()->mutable_update()->add_places();
 		place->set_con(read_con(data));
 		place->set_loc(LOCATION_MAIN_DECK);
-		auto const size = context.pile_size(place->con(), place->loc());
+		auto const size = context.pile_size(get_con(*place), get_loc(*place));
 		place->set_seq(size - 1U - read<CSeq>(data, "sequence"));
 		place->set_oseq(OSEQ_INVALID);
 		read<CCode>(data, "skipped card code");
@@ -1439,7 +1436,7 @@ auto encode_one(google::protobuf::Arena& arena, IEncodeContext& context,
 			auto* from = op->mutable_from();
 			from->set_con(con);
 			from->set_loc(LOCATION_MAIN_DECK);
-			from->set_seq(context.pile_size(con, from->loc()) - count);
+			from->set_seq(context.pile_size(con, get_loc(*from)) - count);
 			from->set_oseq(OSEQ_INVALID);
 		}
 		op->set_count(count);
@@ -1447,7 +1444,7 @@ auto encode_one(google::protobuf::Arena& arena, IEncodeContext& context,
 			auto* to = op->mutable_to();
 			to->set_con(con);
 			to->set_loc(LOCATION_HAND);
-			to->set_seq(context.pile_size(con, to->loc()));
+			to->set_seq(context.pile_size(con, get_loc(*to)));
 			to->set_oseq(OSEQ_INVALID);
 		}
 		op->set_reverse(true);

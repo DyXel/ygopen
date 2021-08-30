@@ -8,6 +8,7 @@
 #include <cstddef> // size_t
 #include <cstdint>
 #include <vector>
+#include <ygopen/duel/constants_fwd.hpp>
 
 namespace google::protobuf
 {
@@ -21,9 +22,6 @@ namespace YGOpen
 
 namespace Proto::Duel
 {
-
-enum Controller : int;
-enum Location : int;
 
 class Msg;
 class Msg_Query_Data;
@@ -68,8 +66,8 @@ struct EncodeOneResult
 class IEncodeContext
 {
 public:
-	using Con = Proto::Duel::Controller;
-	using Loc = Proto::Duel::Location;
+	using Con = Duel::Controller;
+	using Loc = Duel::Location;
 	using Place = Proto::Duel::Place;
 
 	// Get the number of cards in a certain pile.

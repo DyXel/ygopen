@@ -6,9 +6,11 @@
 #ifndef YGOPEN_PROTO_DUEL_DATA_HPP
 #define YGOPEN_PROTO_DUEL_DATA_HPP
 // clang-format off
-#include "enum.hpp"
 #include <duel_data.pb.h>
 // clang-format on
+
+#include <ygopen/duel/constants/location.hpp>
+#include <ygopen/duel/constants_fwd.hpp>
 
 namespace YGOpen::Proto::Duel
 {
@@ -39,16 +41,26 @@ struct PlaceLess
 	}
 };
 
-// See enum.hpp `is_empty`.
-inline auto is_empty(const Place& place) noexcept -> bool
+inline auto get_con(const Place& place) noexcept -> auto
 {
-	return is_empty(place.loc());
+	return static_cast<YGOpen::Duel::Controller>(place.con());
 }
 
-// See enum.hpp `is_pile`.
+inline auto get_loc(const Place& place) noexcept -> auto
+{
+	return static_cast<YGOpen::Duel::Location>(place.loc());
+}
+
+// See duel/constants/location.hpp `is_empty`.
+inline auto is_empty(const Place& place) noexcept -> bool
+{
+	return is_empty(get_loc(place));
+}
+
+// See duel/constants/location.hpp `is_pile`.
 inline auto is_pile(const Place& place) noexcept -> bool
 {
-	return is_pile(place.loc());
+	return is_pile(get_loc(place));
 }
 
 } // namespace YGOpen::Proto::Duel

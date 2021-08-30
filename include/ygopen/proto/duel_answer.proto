@@ -10,7 +10,6 @@ syntax = "proto3";
 package YGOpen.Proto.Duel;
 
 import "duel_data.proto";
-import "duel_enum.proto";
 
 option cc_enable_arenas = true;
 option optimize_for = LITE_RUNTIME;
@@ -54,7 +53,7 @@ message Answer
 			// Perform hand shuffling.
 			bool shuffle           = 1;
 			// Attempt to go to the selected phase.
-			Phase phase            = 2;
+			uint32 phase           = 2;
 			// Perform an action on a card.
 			CardAction card_action = 3;
 		}
@@ -85,30 +84,30 @@ message Answer
 	oneof t
 	{
 		// Selected attribute or attributes OR'd together.
-		Attribute select_attribute                   = 1;
+		uint32 select_attribute          = 1;
 		// TODO
-		SelectCard select_card                       = 2;
+		SelectCard select_card           = 2;
 		// Selected card code.
-		uint32 select_card_code                      = 3;
+		uint32 select_card_code          = 3;
 		// Index of selected option/effect.
-		uint32 select_effect                         = 4;
+		uint32 select_effect             = 4;
 		// Shuffle action, value of phase or "actioned" card.
-		SelectIdle select_idle                       = 5;
+		SelectIdle select_idle           = 5;
 		// Index of selected number.
-		uint32 select_number                         = 6;
+		uint32 select_number             = 6;
 		// Selected position or positions OR'd together.
-		Position select_position                     = 7;
+		uint32 select_position           = 7;
 		// Selected race or races OR'd together.
-		Race select_race                             = 8;
+		uint64 select_race               = 8;
 		// Self-explanatory.
-		RockPaperScissors select_rock_paper_scissors = 9;
+		int32 select_rock_paper_scissors = 9;
 		// TODO
-		SelectToChain select_to_chain                = 10;
+		SelectToChain select_to_chain    = 10;
 		// Self-explanatory.
-		bool select_yes_no                           = 11;
+		bool select_yes_no               = 11;
 		// TODO
-		SelectZone select_zone                       = 12;
+		SelectZone select_zone           = 12;
 		// TODO
-		Sort sort                                    = 13;
+		Sort sort                        = 13;
 	}
 }

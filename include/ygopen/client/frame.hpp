@@ -10,8 +10,9 @@
 #include <cassert>
 #include <forward_list>
 #include <vector>
-
-#include "ygopen/proto/duel/data.hpp"
+#include <ygopen/duel/constants/controller.hpp>
+#include <ygopen/duel/constants/location.hpp>
+#include <ygopen/proto/duel/data.hpp>
 
 namespace YGOpen::Client
 {
@@ -57,13 +58,13 @@ public:
 			PileType materials;
 		};
 
-		constexpr auto operator[](Proto::Duel::Location loc) const noexcept
+		constexpr auto operator[](Duel::Location loc) const noexcept
 			-> Zone const*
 		{
 			return at_(*this, loc);
 		}
 
-		constexpr auto operator[](Proto::Duel::Location loc) noexcept -> Zone*
+		constexpr auto operator[](Duel::Location loc) noexcept -> Zone*
 		{
 			return at_(*this, loc);
 		}
@@ -78,10 +79,9 @@ public:
 
 		// FIXME: Use std::span as return type if we ever move to >=C++20.
 		template<typename T>
-		static constexpr auto at_(T& t, Proto::Duel::Location loc) noexcept
-			-> auto*
+		static constexpr auto at_(T& t, Duel::Location loc) noexcept -> auto*
 		{
-			using namespace YGOpen::Proto::Duel;
+			using namespace YGOpen::Duel;
 			if(loc == LOCATION_MONSTER_ZONE)
 				return t.monster_.data();
 			if(loc == LOCATION_SPELL_ZONE)
@@ -100,7 +100,7 @@ public:
 		}
 	};
 
-	using FieldType = std::array<Side, Proto::Duel::Controller_ARRAYSIZE>;
+	using FieldType = std::array<Side, Duel::CONTROLLER_ARRAY_SIZE>;
 
 	explicit constexpr BasicFrame(
 		CardBuilder const& builder = CardBuilder()) noexcept
@@ -118,18 +118,11 @@ public:
 		-> bool
 	{
 		if(is_pile(place))
-			return place.seq() < pile(place.con(), place.loc()).size();
+			return place.seq() < pile(place).size();
 		auto& z = zone(place);
 		if(place.oseq() < 0)
 			return z.card != nullptr;
 		return static_cast<size_t>(place.oseq()) < z.materials.size();
-	}
-
-	constexpr auto pile(Proto::Duel::Controller con,
-	                    Proto::Duel::Location loc) const noexcept
-		-> const PileType&
-	{
-		return pile_(*this, con, loc);
 	}
 
 	constexpr auto card(PlaceType const& place) const noexcept -> Card const&
@@ -137,7 +130,19 @@ public:
 		return card_(*this, place);
 	}
 
-	constexpr auto zone(Proto::Duel::Controller con, Proto::Duel::Location loc,
+	constexpr auto pile(Duel::Controller con, Duel::Location loc) const noexcept
+		-> const PileType&
+	{
+		return pile_(*this, con, loc);
+	}
+
+	constexpr auto pile(PlaceType const& place) const noexcept
+		-> const PileType&
+	{
+		return pile_(*this, get_con(place), get_loc(place));
+	}
+
+	constexpr auto zone(Duel::Controller con, Duel::Location loc,
 	                    uint32_t seq) const noexcept ->
 		typename Side::Zone const&
 	{
@@ -147,25 +152,30 @@ public:
 	constexpr auto zone(PlaceType const& place) const noexcept ->
 		typename Side::Zone const&
 	{
-		return zone(place.con(), place.loc(), place.seq());
+		return zone(get_con(place), get_loc(place), place.seq());
 	}
 
 	// Non-const getters.
 
 	constexpr auto builder() noexcept -> CardBuilder& { return cards_; }
 
-	constexpr auto pile(Proto::Duel::Controller con,
-	                    Proto::Duel::Location loc) noexcept -> PileType&
-	{
-		return pile_(*this, con, loc);
-	}
-
 	constexpr auto card(PlaceType const& place) noexcept -> Card&
 	{
 		return card_(*this, place);
 	}
 
-	constexpr auto zone(Proto::Duel::Controller con, Proto::Duel::Location loc,
+	constexpr auto pile(Duel::Controller con, Duel::Location loc) noexcept
+		-> PileType&
+	{
+		return pile_(*this, con, loc);
+	}
+
+	constexpr auto pile(PlaceType const& place) noexcept -> PileType&
+	{
+		return pile_(*this, get_con(place), get_loc(place));
+	}
+
+	constexpr auto zone(Duel::Controller con, Duel::Location loc,
 	                    uint32_t seq) noexcept -> typename Side::Zone&
 	{
 		return zone_(*this, con, loc, seq);
@@ -173,7 +183,7 @@ public:
 
 	constexpr auto zone(PlaceType const& place) noexcept -> typename Side::Zone&
 	{
-		return zone(place.con(), place.loc(), place.seq());
+		return zone(get_con(place), get_loc(place), place.seq());
 	}
 
 	// Modifiers.
@@ -206,13 +216,13 @@ public:
 		Card* c = nullptr;
 		if(is_from_pile && is_to_pile)
 		{
-			auto& p1 = pile(from.con(), from.loc());
-			auto& p2 = pile(to.con(), to.loc());
+			auto& p1 = pile(from);
+			auto& p2 = pile(to);
 			c = insert_at_(p2, to.seq(), take_at_(p1, from.seq()));
 		}
 		else if(is_from_pile && !is_to_pile)
 		{
-			auto& p = pile(from.con(), from.loc());
+			auto& p = pile(from);
 			c = take_at_(p, from.seq());
 			auto& z = zone(to);
 			if(is_to_not_xyz_mat)
@@ -232,7 +242,7 @@ public:
 				std::swap(z.card, c);
 			else
 				c = take_at_(z.materials, from.oseq());
-			insert_at_(pile(to.con(), to.loc()), to.seq(), c);
+			insert_at_(pile(to), to.seq(), c);
 		}
 		else // !is_from_pile && !is_to_pile
 		{
@@ -271,22 +281,22 @@ public:
 	                            size_t count) noexcept -> void
 	{
 		// NOTE: Also assuming that shuffle is done for a single location.
-		assert(!is_pile(previous->loc()));
+		assert(!is_pile(*previous));
 		assert(count <= FIELD_ZONE_LIMIT_MONSTER);
 		std::array<uint32_t, FIELD_ZONE_LIMIT_MONSTER> seqs{};
 		for(size_t i = 0U; i < count; i++)
 		{
-			auto const& place = *previous++;
-			assert(has_card(place));
-			seqs[i] = place.seq();
+			auto const& p = *previous++;
+			assert(has_card(p));
+			seqs[i] = p.seq();
 		}
 		for(size_t i = 0U; i < count; i++)
 		{
-			auto const& place = *current++;
-			if(is_empty(place))
+			auto const& p = *current++;
+			if(is_empty(p))
 				continue;
-			std::swap(zone(place.con(), place.loc(), seqs[i]), zone(place));
-			auto const seq = place.seq();
+			std::swap(zone(get_con(p), get_loc(p), seqs[i]), zone(p));
+			auto const seq = p.seq();
 			for(size_t j = 0U; j < count; j++)
 			{
 				if(seqs[j] != seq)
@@ -315,13 +325,13 @@ public:
 		assert(!is_b_not_xyz_mat || !is_a_pile);
 		if(is_a_pile && is_b_pile)
 		{
-			auto& pa = pile(a.con(), a.loc());
-			auto& pb = pile(b.con(), b.loc());
+			auto& pa = pile(a);
+			auto& pb = pile(b);
 			std::swap(pa[a.seq()], pb[b.seq()]);
 		}
 		else if(is_a_pile && !is_b_pile)
 		{
-			auto& p = pile(a.con(), a.loc());
+			auto& p = pile(a);
 			auto& z = zone(b);
 			if(is_b_not_xyz_mat)
 				std::swap(p[a.seq()], z.card);
@@ -331,7 +341,7 @@ public:
 		else if(!is_a_pile && is_b_pile)
 		{
 			auto& z = zone(a);
-			auto& p = pile(a.con(), a.loc());
+			auto& p = pile(b);
 			if(is_a_not_xyz_mat)
 				std::swap(z.card, p[b.oseq()]);
 			else
@@ -365,7 +375,7 @@ public:
 		-> void
 	{
 		assert(is_pile(place));
-		auto& p = pile(place.con(), place.loc());
+		auto& p = pile(place);
 		if(p.size() < count)
 		{
 			for(size_t i = count - p.size(); i != 0; i--)
@@ -389,7 +399,7 @@ public:
 		assert(is_pile(from));
 		assert(is_pile(to));
 		pile_splice_cache_.resize(count);
-		auto& pile_from = pile(from.con(), from.loc());
+		auto& pile_from = pile(from);
 		assert(count + from.seq() <= pile_from.size());
 		{
 			auto first = pile_from.cbegin() + from.seq();
@@ -402,7 +412,7 @@ public:
 			pile_from.erase(first, last);
 		}
 		{
-			auto& pile_to = pile(to.con(), to.loc());
+			auto& pile_to = pile(to);
 			pile_to.insert(pile_to.begin() + to.seq(),
 			               pile_splice_cache_.cbegin(),
 			               pile_splice_cache_.cend());
@@ -414,7 +424,7 @@ public:
 	{
 		assert(is_pile(a));
 		assert(is_pile(b));
-		std::swap(pile(a.con(), a.loc()), pile(b.con(), b.loc()));
+		std::swap(pile(a), pile(b));
 	}
 
 	constexpr auto clear() noexcept -> void
@@ -466,7 +476,7 @@ protected:
 	{
 		if(is_pile(place))
 		{
-			auto& p = pile(place.con(), place.loc());
+			auto& p = pile(place);
 			p.insert(p.begin() + place.seq(), &c);
 			return;
 		}
@@ -485,7 +495,7 @@ protected:
 		Card* c = nullptr;
 		if(is_pile(place))
 		{
-			auto& p = pile(place.con(), place.loc());
+			auto& p = pile(place);
 			c = p[place.seq()];
 			p.erase(p.begin() + place.seq());
 		}
@@ -523,7 +533,7 @@ protected:
 	}
 
 private:
-	using MultiPile = std::array<PileType, Proto::Duel::Controller_ARRAYSIZE>;
+	using MultiPile = std::array<PileType, Duel::CONTROLLER_ARRAY_SIZE>;
 
 	// NOTE: Empty base optimization.
 	struct Packed : public CardBuilder
@@ -547,10 +557,10 @@ private:
 	// Getters implementation.
 
 	template<typename T>
-	static constexpr auto pile_(T& t, Proto::Duel::Controller con,
-	                            Proto::Duel::Location loc) noexcept -> auto&
+	static constexpr auto pile_(T& t, Duel::Controller con,
+	                            Duel::Location loc) noexcept -> auto&
 	{
-		using namespace YGOpen::Proto::Duel;
+		using namespace YGOpen::Duel;
 		if(loc == LOCATION_MAIN_DECK)
 			return t.main_deck_[con];
 		if(loc == LOCATION_HAND)
@@ -572,7 +582,7 @@ private:
 	static constexpr auto card_(T& t, PlaceType const& place) noexcept -> auto&
 	{
 		if(is_pile(place))
-			return *t.pile(place.con(), place.loc())[place.seq()];
+			return *t.pile(place)[place.seq()];
 		auto& z = t.zone(place);
 		if(place.oseq() < 0)
 			return *z.card;
@@ -580,8 +590,7 @@ private:
 	}
 
 	template<typename T>
-	static constexpr auto zone_(T& t, Proto::Duel::Controller con,
-	                            Proto::Duel::Location loc,
+	static constexpr auto zone_(T& t, Duel::Controller con, Duel::Location loc,
 	                            uint32_t seq) noexcept -> auto&
 	{
 		assert(!is_pile(loc));

@@ -6,8 +6,7 @@
 #ifndef YGOPEN_CLIENT_UNDO_PARSE_EVENT
 #define YGOPEN_CLIENT_UNDO_PARSE_EVENT
 #include <utility>
-
-#include "ygopen/proto/duel/msg.hpp"
+#include <ygopen/proto/duel/msg.hpp>
 
 namespace YGOpen::Client
 {

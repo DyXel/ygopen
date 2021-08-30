@@ -15,6 +15,8 @@ template<typename T>
 class Value
 {
 public:
+	using ValueType = T;
+
 	explicit constexpr Value() noexcept : value_() {}
 
 	constexpr auto get() const noexcept -> const T& { return value_; }
@@ -31,6 +33,8 @@ template<typename T>
 class Sequential
 {
 public:
+	using ValueType = T;
+
 	template<typename Allocator>
 	explicit constexpr Sequential(Allocator* alloc) noexcept
 		: values_(1U, alloc), current_value_(values_.cbegin())
