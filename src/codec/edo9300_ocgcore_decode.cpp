@@ -110,7 +110,7 @@ auto decode_one_answer(Proto::Duel::Msg::Request const& request,
 				t = 4;
 			else // act == Answer::SelectIdle::ACTION_ATTACK
 				t = 1;
-			response_i(((s & 0xFFFFU) << 16U) & (t & 0xFFFFU));
+			response_i(((s & 0xFFFFU) << 16U) | (t & 0xFFFFU));
 			break;
 		}
 		default:
