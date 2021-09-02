@@ -23,20 +23,17 @@ message Answer
 
 	message SelectIdle
 	{
-		// NOTE: Using bitfield enumerations for the convenience of grouping in
-		// client applications. When setting an answer for a card only 1 value
-		// must be set at the time.
 		enum Action
 		{
-			ACTION_SHUFFLE    = 0x0;
-			ACTION_PHASE      = 0x1;
-			ACTION_ACTIVATE   = 0x2;
-			ACTION_SUMMON     = 0x4;
-			ACTION_SPSUMMON   = 0x8;
-			ACTION_REPOSITION = 0x10;
-			ACTION_MSET       = 0x20;
-			ACTION_SSET       = 0x40;
-			ACTION_ATTACK     = 0x80;
+			ACTION_ACTIVATE   = 0;
+			ACTION_SUMMON     = 1;
+			ACTION_SPSUMMON   = 2;
+			ACTION_REPOSITION = 3;
+			ACTION_MSET       = 4;
+			ACTION_SSET       = 5;
+			ACTION_ATTACK     = 6;
+			ACTION_SHUFFLE    = 7;
+			ACTION_PHASE      = 8;
 		}
 
 		message CardAction
