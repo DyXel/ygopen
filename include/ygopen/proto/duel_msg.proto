@@ -362,10 +362,14 @@ message Msg
 				bool can_finish                             = 1;
 				// Will finishing the selection accept (true) or cancel (false)?
 				bool accept                                 = 2;
+				// Hint about minimum cards to select.
+				uint32 min                                  = 3;
+				// Hint about maximum cards to select.
+				uint32 max                                  = 4;
 				// Cards that can be selected.
-				repeated _SelectableCard selectable_cards   = 3;
+				repeated _SelectableCard selectable_cards   = 5;
 				// Cards that are selected and can be deselected.
-				repeated _SelectableCard deselectable_cards = 4;
+				repeated _SelectableCard deselectable_cards = 6;
 			}
 
 			message UniqueRange
