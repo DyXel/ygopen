@@ -18,7 +18,39 @@ message Answer
 {
 	message SelectCard
 	{
-		// TODO
+		message Counters
+		{
+			message _Pair
+			{
+				// Corresponds to the indexes the request message had for its
+				// repeated fields.
+				uint32 index  = 1;
+				// Number of counters to select from that particular card index
+				// without exceeding the amount given in the request message.
+				uint32 amount = 2;
+			}
+
+			repeated _Pair values = 1;
+		}
+
+		message Indexes
+		{
+			// Corresponds to the indexes the request message had for its
+			// repeated fields.
+			repeated uint32 values = 1;
+		}
+
+		oneof t
+		{
+			// Cancel the selection. Only if it can be canceled.
+			bool cancel       = 1;
+			// Finish the selection as-if, if possible.
+			bool finish       = 2;
+			// For Request::SelectCard::Counters.
+			Counters counters = 3;
+			// For every other type case of Request::SelectCard.
+			Indexes indexes   = 4;
+		}
 	}
 
 	message SelectIdle
@@ -82,7 +114,7 @@ message Answer
 	{
 		// Selected attribute or attributes OR'd together.
 		uint32 select_attribute          = 1;
-		// TODO
+		// Cancel selection, indexes of cards and counter counts (if any).
 		SelectCard select_card           = 2;
 		// Selected card code.
 		uint32 select_card_code          = 3;
@@ -98,11 +130,11 @@ message Answer
 		uint64 select_race               = 8;
 		// Self-explanatory.
 		int32 select_rock_paper_scissors = 9;
-		// TODO
+		// No operation (Do not chain anything), or index of card to chain.
 		SelectToChain select_to_chain    = 10;
 		// Self-explanatory.
 		bool select_yes_no               = 11;
-		// TODO
+		// Zone or zones to select.
 		SelectZone select_zone           = 12;
 		// TODO
 		Sort sort                        = 13;

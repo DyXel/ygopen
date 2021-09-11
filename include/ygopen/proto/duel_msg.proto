@@ -89,7 +89,7 @@ message Msg
 				repeated Place current_places  = 2;
 			}
 
-			uint64 reason                  = 1;
+			uint64 reason = 1;
 			oneof t
 			{
 				Add add                    = 2;
@@ -116,14 +116,14 @@ message Msg
 			uint32 match_win_reason = 2;
 			oneof t
 			{
-				int32 winner        = 3;
-				bool draw           = 4;
+				int32 winner = 3;
+				bool draw    = 4;
 			}
 		}
 
 		message LP
 		{
-			int32 controller   = 1;
+			int32 controller = 1;
 			oneof t
 			{
 				uint32 become  = 2; // =
@@ -157,7 +157,7 @@ message Msg
 
 			message Description
 			{
-				int32 con         = 1;
+				int32 con = 1;
 				oneof t
 				{
 					Effect add    = 2;
@@ -246,7 +246,7 @@ message Msg
 				repeated _Operation ops = 1;
 			}
 
-			uint64 reason         = 1;
+			uint64 reason = 1;
 			oneof t
 			{
 				Exchange exchange = 2;
