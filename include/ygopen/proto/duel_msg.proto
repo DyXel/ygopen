@@ -420,6 +420,16 @@ message Msg
 				// Cards that can be selected.
 				repeated _TributeCard cards = 4;
 			}
+
+			oneof t
+			{
+				Counters counters              = 1;
+				Limbo limbo                    = 2;
+				Recursive recursive            = 3;
+				UniqueRange unique_range       = 4;
+				UniqueSum unique_sum           = 5;
+				UniqueTributes unique_tributes = 6;
+			}
 		}
 
 		message SelectCardCode // TODO: Refactor this to use a properly structured flow.
