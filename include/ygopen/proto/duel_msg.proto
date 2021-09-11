@@ -459,7 +459,7 @@ message Msg
 		{
 			message _AtkCard
 			{
-				Place place = 1;
+				Place place              = 1;
 				bool can_attack_directly = 2;
 			}
 			// Can the shuffle action be executed? (usually shuffles hand).

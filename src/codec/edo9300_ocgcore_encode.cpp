@@ -957,13 +957,84 @@ auto encode_one(google::protobuf::Arena& arena, IEncodeContext& context,
 		select_attribute->set_attribute(read_attribute(data));
 		break;
 	}
-	case MSG_SELECT_CARD:
-	case MSG_SELECT_TRIBUTE:
 	case MSG_SELECT_COUNTER:
-	case MSG_SELECT_SUM:
+	{
+		// TODO
+		break;
+	}
+	case MSG_SELECT_CARD:
+	{
+		auto* select_card = create_request()->mutable_select_card();
+		auto const can_cancel = read_bool(data, "can cancel");
+		auto const min = read<uint32_t>(data, "min");
+		auto const max = read<uint32_t>(data, "max");
+		auto const count = read<CCount>(data, "count");
+		// NOTE: We read the location from the first card to disambiguate
+		// between Limbo selections and regular UniqueRange selections.
+		assert(count > 0U);
+		constexpr size_t TEMP_SKIP_SZ = sizeof(CCode) + sizeof(CPlayer);
+		skip(data, TEMP_SKIP_SZ);
+		bool const is_not_limbo = read<CSLoc>(data) != 0U;
+		back(data, TEMP_SKIP_SZ);
+		if(is_not_limbo)
+		{
+			auto* unique_range = select_card->mutable_unique_range();
+			unique_range->set_can_cancel(can_cancel);
+			unique_range->set_min(min);
+			unique_range->set_max(max);
+			for(CCount i = 0; i < count; i++)
+			{
+				auto& card = *unique_range->add_cards();
+				card.set_code(read<CCode>(data, "card code"));
+				read_loc_info(data, *card.mutable_place());
+			}
+		}
+		else
+		{
+			auto* limbo = select_card->mutable_limbo();
+			limbo->set_can_cancel(can_cancel);
+			limbo->set_min(min);
+			limbo->set_max(max);
+			for(CCount i = 0; i < count; i++)
+			{
+				limbo->add_card_codes(read<CCode>(data, "card code"));
+				skip(data, CORE_LOC_INFO_SIZE, "empty place");
+			}
+		}
+		break;
+	}
 	case MSG_SELECT_UNSELECT_CARD:
 	{
-		// TODO: Spare my soul!
+		auto* select_card = create_request()->mutable_select_card();
+		auto* recursive = select_card->mutable_recursive();
+		recursive->set_can_finish(read_bool(data, "can finish"));
+		recursive->set_accept(read_bool(data, "accept or cancel"));
+		recursive->set_min(read<uint32_t>(data, "min"));
+		recursive->set_max(read<uint32_t>(data, "max"));
+		auto const select_count = read<CCount>(data, "select count");
+		for(CCount i = 0; i < select_count; i++)
+		{
+			auto& card = *recursive->add_selectable_cards();
+			card.set_code(read<CCode>(data, "card code"));
+			read_loc_info(data, *card.mutable_place());
+		}
+		auto const deselect_count = read<CCount>(data, "deselect count");
+		for(CCount i = 0; i < deselect_count; i++)
+		{
+			auto& card = *recursive->add_deselectable_cards();
+			card.set_code(read<CCode>(data, "card code"));
+			read_loc_info(data, *card.mutable_place());
+		}
+		break;
+	}
+	case MSG_SELECT_SUM:
+	{
+		// TODO
+		break;
+	}
+	case MSG_SELECT_TRIBUTE:
+	{
+		// TODO
 		break;
 	}
 	case MSG_ANNOUNCE_CARD:
@@ -1003,13 +1074,13 @@ auto encode_one(google::protobuf::Arena& arena, IEncodeContext& context,
 				auto& card = *select_idle->add_can_attack_cards();
 				read<CCode>(data, "skipped card code");
 				read_loc_info<CSLoc, CSSeq, void>(data, *card.mutable_place());
-				card.set_can_attack_directly(read<uint8_t>(data) != 0U);
+				card.set_can_attack_directly(read_bool(data));
 			}
 		}
 		uint32_t phases = PHASE_UNSPECIFIED;
-		if(read<uint8_t>(data, "to_mp2") != 0U)
+		if(read_bool(data, "to_mp2"))
 			phases |= PHASE_MAIN_2;
-		if(read<uint8_t>(data, "to_ep") != 0U)
+		if(read_bool(data, "to_ep"))
 			phases |= PHASE_END;
 		select_idle->set_available_phase(static_cast<Phase>(phases));
 		select_idle->set_can_shuffle(false);
@@ -1076,12 +1147,12 @@ auto encode_one(google::protobuf::Arena& arena, IEncodeContext& context,
 			}
 		}
 		uint32_t phases = PHASE_UNSPECIFIED;
-		if(read<uint8_t>(data, "to_bp") != 0U)
+		if(read_bool(data, "to_bp"))
 			phases |= PHASE_BATTLE;
-		if(read<uint8_t>(data, "to_ep") != 0U)
+		if(read_bool(data, "to_ep"))
 			phases |= PHASE_END;
 		select_idle->set_available_phase(static_cast<Phase>(phases));
-		select_idle->set_can_shuffle(read<uint8_t>(data, "can shuffle") != 0U);
+		select_idle->set_can_shuffle(read_bool(data, "can shuffle"));
 		break;
 	}
 	case MSG_ANNOUNCE_NUMBER:
@@ -1116,9 +1187,9 @@ auto encode_one(google::protobuf::Arena& arena, IEncodeContext& context,
 	case MSG_SELECT_CHAIN:
 	{
 		auto* select_to_chain = create_request()->mutable_select_to_chain();
-		const bool triggering = (read<uint8_t>(data, "spe_count") & 0x7FU) > 0U;
+		bool const triggering = (read<uint8_t>(data, "spe_count") & 0x7FU) > 0U;
 		select_to_chain->set_triggering(triggering);
-		select_to_chain->set_forced(read<uint8_t>(data, "forced") != 0U);
+		select_to_chain->set_forced(read_bool(data, "forced"));
 		skip(data, 8U, "timing hints");
 		{ // Activable cards
 			auto const count = read<CCount>(data, "number of cards");
