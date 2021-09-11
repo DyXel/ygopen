@@ -50,25 +50,6 @@ constexpr int OSEQ_INVALID = -1;
 
 #include "ocgcore_messages.inl"
 
-constexpr auto is_special_msg(OCGCoreMsgValue core_msg) noexcept -> bool
-{
-	switch(core_msg)
-	{
-	case MSG_WIN:
-	case MSG_HINT:
-	case MSG_SWAP_GRAVE_DECK:
-	case MSG_REVERSE_DECK:
-	case MSG_DECK_TOP:
-	case MSG_MOVE:
-	case MSG_DRAW:
-	case MSG_CARD_HINT:
-	case MSG_MATCH_KILL:
-		return true;
-	default:
-		return false;
-	}
-}
-
 #ifndef YGOPEN_ENCODER_DEBUG
 
 template<typename... Args>
@@ -753,15 +734,14 @@ auto encode_one(google::protobuf::Arena& arena, IEncodeContext& context,
 #undef RESULT
 	case MSG_HAND_RES:
 	{
-		// TODO: make sure these are properly mapped to the enum.
 		auto* rps = create_event()->mutable_result()->mutable_rps();
 		const auto hands_results = read<uint8_t>(data, "hand results");
-		auto to_rps = [](uint8_t v)
+		auto to_rps = [](uint8_t v) constexpr noexcept
 		{
 			return static_cast<RockPaperScissors>(v);
 		};
-		rps->add_values(to_rps((hands_results & 0x3) - 1));
-		rps->add_values(to_rps(((hands_results >> 2) & 0x3) - 1));
+		rps->add_values(to_rps(hands_results & 0x3U));
+		rps->add_values(to_rps((hands_results >> 2U) & 0x3U));
 		break;
 	}
 	case MSG_START:
