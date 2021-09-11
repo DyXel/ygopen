@@ -322,60 +322,103 @@ message Msg
 			uint32 attribute = 2;
 		}
 
-		message SelectCard // TODO: Refactor.
+		message SelectCard
 		{
-			// Type of selection, each type has different behavior
-			// and expectations on how an answer should be made.
-			// Check the enum value comments for details.
-			enum SelectCardType
+			message _SelectableCard
 			{
-				SELECT_CARD_TYPE_UNSPECIFIED = 0;
-				// TODO
-				SELECT_CARD_TYPE_NORMAL      = 1;
-				// TODO
-				SELECT_CARD_TYPE_TRIBUTE     = 2;
-				// TODO
-				SELECT_CARD_TYPE_SUM         = 3;
-				// TODO
-				SELECT_CARD_TYPE_MULTI       = 4; // SelectUnselect
-				// TODO
-				SELECT_CARD_TYPE_COUNTER     = 5;
+				Place place = 1;
+				uint32 code = 2;
 			}
 
-			message SumParam
+			message Counters
 			{
-				enum SumCriteria
+				message _CounterCard
 				{
-					SUM_CRITERIA_UNSPECIFIED = 0;
-					SUM_CRITERIA_EQUAL       = 1;
-					SUM_CRITERIA_GREATER     = 2;
+					Place place   = 1;
+					uint32 amount = 2;
 				}
-				SumCriteria sum_criteria = 1;
-				uint32 value             = 2;
+
+				// Counter type and amount that must be chosen among cards.
+				Counter counter             = 1;
+				// Cards to choose counters from, up to their `amount`.
+				repeated _CounterCard cards = 2;
 			}
 
-			SelectCardType type               = 1;
-			// Can the current selection be finished (either accept or cancel)?
-			bool can_finish                   = 2;
-			// Will finishing the selection accept (true) or cancel (false)?
-			bool accept                       = 3;
-			// Minimum cards to select.
-			uint32 min                        = 4;
-			// Maximum cards to select.
-			uint32 max                        = 5;
-			// Cards that must be selected.
-			repeated Place must_select_cards  = 6;
-			// Cards that can be selected.
-			repeated Place selectable_cards   = 7;
-			// Cards that are selected and can be unselected.
-			repeated Place unselectable_cards = 8;
-			oneof t
+			message Limbo
 			{
-				// Used by Tribute and Sum.
-				SumParam sum_param            = 9;
-				// Counter type and number of counters the that
-				// must be removed from cards to satisfy selection.
-				Counter counter               = 10;
+				// Can the selection be cancelled?
+				bool can_cancel            = 1;
+				// Minimum cards to select.
+				uint32 min                 = 2;
+				// Maximum cards to select.
+				uint32 max                 = 3;
+				// Card codes that can be selected.
+				repeated uint32 card_codes = 4;
+			}
+
+			message Recursive
+			{
+				// Can the current selection be cancelled or accepted?
+				bool can_finish                             = 1;
+				// Will finishing the selection accept (true) or cancel (false)?
+				bool accept                                 = 2;
+				// Cards that can be selected.
+				repeated _SelectableCard selectable_cards   = 3;
+				// Cards that are selected and can be deselected.
+				repeated _SelectableCard deselectable_cards = 4;
+			}
+
+			message UniqueRange
+			{
+				// Can the selection be cancelled?
+				bool can_cancel                = 1;
+				// Minimum cards to select.
+				uint32 min                     = 2;
+				// Maximum cards to select.
+				uint32 max                     = 3;
+				// Cards that can be selected.
+				repeated _SelectableCard cards = 4;
+			}
+
+			message UniqueSum
+			{
+				message _SumCard
+				{
+					Place place    = 1;
+					uint32 code    = 2;
+					uint32 param_1 = 3;
+					uint32 param_2 = 4;
+				}
+
+				// Can the selection be cancelled?
+				bool can_cancel         = 1;
+				// Should the sum be matched exactly?
+				bool sum_exactly        = 2;
+				// Minimum sum to satisfy.
+				uint32 sum_min          = 3;
+				// Maximum sum to satisfy.
+				uint32 sum_max          = 4;
+				// Cards that can be selected.
+				repeated _SumCard cards = 5;
+			}
+
+			message UniqueTributes
+			{
+				message _TributeCard
+				{
+					Place place     = 1;
+					uint32 code     = 2;
+					uint32 count_as = 3;
+				}
+
+				// Can the selection be cancelled?
+				bool can_cancel             = 1;
+				// Minimum tributes needed.
+				uint32 tribute_min          = 2;
+				// Maximum tributes accepted.
+				uint32 tribute_max          = 3;
+				// Cards that can be selected.
+				repeated _TributeCard cards = 4;
 			}
 		}
 
