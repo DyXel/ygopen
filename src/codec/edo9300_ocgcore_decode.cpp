@@ -44,7 +44,56 @@ auto decode_one_answer(Proto::Duel::Msg::Request const& request,
 	}
 	case Answer::kSelectCard:
 	{
-		// TODO
+		auto const& select_card = answer.select_card();
+		switch(select_card.t_case())
+		{
+		case Answer::SelectCard::kCancel:
+		case Answer::SelectCard::kFinish:
+		{
+			response_i(-1);
+			break;
+		}
+		case Answer::SelectCard::kCounters:
+		{
+			assert(request.t_case() == Msg::Request::kSelectCard);
+			auto const& rsc = request.select_card();
+			assert(rsc.t_case() == Msg::Request::SelectCard::kCounters);
+			auto const card_count = rsc.counters().cards_size();
+			// TODO: Finish this.
+			break;
+		}
+		case Answer::SelectCard::kIndexes:
+		{
+			auto const& indexes = select_card.indexes().values();
+			assert(indexes.size() > 0);
+			bool const is_select_unselect = [&]()
+			{
+				assert(request.t_case() == Msg::Request::kSelectCard);
+				auto const& rsc = request.select_card();
+				return rsc.t_case() == Msg::Request::SelectCard::kRecursive;
+			}();
+			if(is_select_unselect)
+			{
+				out.resize(sizeof(int32_t) * 2U);
+				auto* ptr = out.data();
+				write<int32_t>(ptr, 1);
+				write(ptr, static_cast<int32_t>(*indexes.begin()));
+			}
+			else
+			{
+				auto const idx_sz = indexes.size();
+				out.resize((sizeof(int32_t) * 2U) + (sizeof(int16_t) * idx_sz));
+				auto* ptr = out.data();
+				write<int32_t>(ptr, 1); // t == 1 so each index is int16_t
+				write(ptr, static_cast<int32_t>(idx_sz));
+				for(auto const index : indexes)
+					write(ptr, static_cast<int16_t>(index));
+			}
+			break;
+		}
+		default:
+			break;
+		}
 		break;
 	}
 	case Answer::kSelectCardCode:
