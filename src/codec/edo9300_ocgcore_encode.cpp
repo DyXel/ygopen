@@ -975,7 +975,7 @@ auto encode_one(google::protobuf::Arena& arena, IEncodeContext& context,
 		constexpr size_t TEMP_SKIP_SZ = sizeof(CCode) + sizeof(CPlayer);
 		skip(data, TEMP_SKIP_SZ);
 		bool const is_not_limbo = read<CSLoc>(data) != 0U;
-		back(data, TEMP_SKIP_SZ);
+		back(data, TEMP_SKIP_SZ + sizeof(CSLoc));
 		if(is_not_limbo)
 		{
 			auto* unique_range = select_card->mutable_unique_range();
