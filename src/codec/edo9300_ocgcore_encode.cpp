@@ -1034,7 +1034,19 @@ auto encode_one(google::protobuf::Arena& arena, IEncodeContext& context,
 	}
 	case MSG_SELECT_TRIBUTE:
 	{
-		// TODO
+		auto* select_card = create_request()->mutable_select_card();
+		auto* unique_tributes = select_card->mutable_unique_tributes();
+		unique_tributes->set_can_cancel(read_bool(data, "can cancel"));
+		unique_tributes->set_tribute_min(read<uint32_t>(data, "min"));
+		unique_tributes->set_tribute_max(read<uint32_t>(data, "max"));
+		auto const count = read<CCount>(data, "count");
+		for(CCount i = 0; i < count; i++)
+		{
+			auto& card = *unique_tributes->add_cards();
+			card.set_code(read<CCode>(data, "card code"));
+			read_loc_info<CSLoc, CSeq, void>(data, *card.mutable_place());
+			card.set_count_as(read<uint8_t>(data, "release_param"));
+		}
 		break;
 	}
 	case MSG_ANNOUNCE_CARD:
