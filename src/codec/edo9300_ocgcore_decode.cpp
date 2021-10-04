@@ -53,15 +53,6 @@ auto decode_one_answer(Proto::Duel::Msg::Request const& request,
 			response_i(-1);
 			break;
 		}
-		case Answer::SelectCard::kCounters:
-		{
-			assert(request.t_case() == Msg::Request::kSelectCard);
-			auto const& rsc = request.select_card();
-			assert(rsc.t_case() == Msg::Request::SelectCard::kCounters);
-			auto const card_count = rsc.counters().cards_size();
-			// TODO: Finish this.
-			break;
-		}
 		case Answer::SelectCard::kIndexes:
 		{
 			auto const& indexes = select_card.indexes().values();
@@ -99,6 +90,11 @@ auto decode_one_answer(Proto::Duel::Msg::Request const& request,
 	case Answer::kSelectCardCode:
 	{
 		response_i(answer.select_card_code());
+		break;
+	}
+	case Answer::kSelectCounter:
+	{
+		// TODO
 		break;
 	}
 	case Answer::kSelectEffect:

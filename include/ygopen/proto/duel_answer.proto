@@ -18,21 +18,6 @@ message Answer
 {
 	message SelectCard
 	{
-		message Counters
-		{
-			message _Pair
-			{
-				// Corresponds to the indexes the request message had for its
-				// repeated fields.
-				uint32 index  = 1;
-				// Number of counters to select from that particular card index
-				// without exceeding the amount given in the request message.
-				uint32 amount = 2;
-			}
-
-			repeated _Pair values = 1;
-		}
-
 		message Indexes
 		{
 			// Corresponds to the indexes the request message had for its
@@ -44,13 +29,26 @@ message Answer
 		{
 			// Cancel the selection. Only if it can be canceled.
 			bool cancel       = 1;
-			// Finish the selection as-if, if possible.
+			// Finish the selection as it is, if possible.
 			bool finish       = 2;
-			// For Request::SelectCard::Counters.
-			Counters counters = 3;
-			// For every other type case of Request::SelectCard.
-			Indexes indexes   = 4;
+			// List of selected cards.
+			Indexes indexes   = 3;
 		}
+	}
+
+	message SelectCounter
+	{
+		message _Pair
+		{
+			// Corresponds to the indexes the request message had for its
+			// repeated fields.
+			uint32 index  = 1;
+			// Number of counters to select from that particular card index
+			// without exceeding the amount given in the request message.
+			uint32 amount = 2;
+		}
+
+		repeated _Pair values = 1;
 	}
 
 	message SelectIdle
@@ -118,25 +116,27 @@ message Answer
 		SelectCard select_card           = 2;
 		// Selected card code.
 		uint32 select_card_code          = 3;
-		// Index of selected option/effect.
-		uint32 select_effect             = 4;
-		// Shuffle action, value of phase or "actioned" card.
-		SelectIdle select_idle           = 5;
-		// Index of selected number.
-		uint32 select_number             = 6;
-		// Selected position or positions OR'd together.
-		uint32 select_position           = 7;
-		// Selected race or races OR'd together.
-		uint64 select_race               = 8;
-		// Self-explanatory.
-		int32 select_rock_paper_scissors = 9;
-		// No operation (Do not chain anything), or index of card to chain.
-		SelectToChain select_to_chain    = 10;
-		// Self-explanatory.
-		bool select_yes_no               = 11;
-		// Zone or zones to select.
-		SelectZone select_zone           = 12;
 		// TODO
-		Sort sort                        = 13;
+		SelectCounter select_counter     = 4;
+		// Index of selected option/effect.
+		uint32 select_effect             = 5;
+		// Shuffle action, value of phase or "actioned" card.
+		SelectIdle select_idle           = 6;
+		// Index of selected number.
+		uint32 select_number             = 7;
+		// Selected position or positions OR'd together.
+		uint32 select_position           = 8;
+		// Selected race or races OR'd together.
+		uint64 select_race               = 9;
+		// Self-explanatory.
+		int32 select_rock_paper_scissors = 10;
+		// No operation (Do not chain anything), or index of card to chain.
+		SelectToChain select_to_chain    = 11;
+		// Self-explanatory.
+		bool select_yes_no               = 12;
+		// Zone or zones to select.
+		SelectZone select_zone           = 13;
+		// TODO
+		Sort sort                        = 14;
 	}
 }

@@ -330,20 +330,6 @@ message Msg
 				uint32 code = 2;
 			}
 
-			message Counters
-			{
-				message _CounterCard
-				{
-					Place place   = 1;
-					uint32 amount = 2;
-				}
-
-				// Counter type and amount that must be chosen among cards.
-				Counter counter             = 1;
-				// Cards to choose counters from, up to their `amount`.
-				repeated _CounterCard cards = 2;
-			}
-
 			message Limbo
 			{
 				// Can the selection be cancelled?
@@ -427,12 +413,11 @@ message Msg
 
 			oneof t
 			{
-				Counters counters              = 1;
-				Limbo limbo                    = 2;
-				Recursive recursive            = 3;
-				UniqueRange unique_range       = 4;
-				UniqueSum unique_sum           = 5;
-				UniqueTributes unique_tributes = 6;
+				Limbo limbo                    = 1;
+				Recursive recursive            = 2;
+				UniqueRange unique_range       = 3;
+				UniqueSum unique_sum           = 4;
+				UniqueTributes unique_tributes = 5;
 			}
 		}
 
@@ -447,11 +432,25 @@ message Msg
 			repeated uint64 opcodes = 2;
 		}
 
+		message SelectCounter
+		{
+			message _CounterCard
+			{
+				Place place   = 1;
+				uint32 amount = 2;
+			}
+
+			// Counter type and amount that must be chosen among cards.
+			Counter counter             = 1;
+			// Cards to choose counters from, up to their `amount`.
+			repeated _CounterCard cards = 2;
+		}
+
 		message SelectEffect
 		{
 			// Amount of effects to choose (usually one).
 			uint32 count            = 1;
-			// List of effects the player can choose
+			// List of effects the player can choose.
 			repeated Effect effects = 2;
 		}
 
@@ -564,16 +563,17 @@ message Msg
 			SelectAttribute select_attribute = 2;
 			SelectCard select_card           = 3;
 			SelectCardCode select_card_code  = 4;
-			SelectEffect select_effect       = 5;
-			SelectIdle select_idle           = 6;
-			SelectNumber select_number       = 7;
-			SelectPosition select_position   = 8;
-			SelectRace select_race           = 9;
-			bool select_rock_paper_scissors  = 10;
-			SelectToChain select_to_chain    = 11;
-			SelectYesNo select_yes_no        = 12;
-			SelectZone select_zone           = 13;
-			Sort sort                        = 14;
+			SelectCounter select_counter     = 5;
+			SelectEffect select_effect       = 6;
+			SelectIdle select_idle           = 7;
+			SelectNumber select_number       = 8;
+			SelectPosition select_position   = 9;
+			SelectRace select_race           = 10;
+			bool select_rock_paper_scissors  = 11;
+			SelectToChain select_to_chain    = 12;
+			SelectYesNo select_yes_no        = 13;
+			SelectZone select_zone           = 14;
+			Sort sort                        = 15;
 		}
 	}
 
