@@ -159,18 +159,13 @@ constexpr auto fix_spell_loc_seq(Loc loc, Seq seq) noexcept
 	using namespace YGOpen::Duel;
 	constexpr Seq SPELL_ZONE_LIMIT = 4U;
 	constexpr Seq FIELD_ZONE_SEQUENCE = 5U;
-	if((loc & LOCATION_SPELL_ZONE) && seq > SPELL_ZONE_LIMIT)
+	if((loc & LOCATION_SPELL_ZONE) != 0 && seq > SPELL_ZONE_LIMIT)
 	{
 		if(seq == FIELD_ZONE_SEQUENCE)
-		{
 			loc = LOCATION_FIELD_ZONE;
-		}
 		else // Pendulum zone.
-		{
 			loc = LOCATION_PENDULUM_ZONE;
-			seq--; // Skip field zone.
-		}
-		seq -= SPELL_ZONE_LIMIT;
+		seq -= FIELD_ZONE_SEQUENCE;
 	}
 	return {loc, seq};
 }
