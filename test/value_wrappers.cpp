@@ -14,7 +14,7 @@ namespace
 // Wrapper over trivial scalar value.
 
 template<typename T>
-class IntWrapperTest : public testing::Test
+class IntWrapperTest : public ::testing::Test
 {
 public:
 	T wrapper;
@@ -39,7 +39,7 @@ TYPED_TEST(IntWrapperTest, GetSetWorks)
 // Wrapper over non-trivial value.
 
 template<typename T>
-class VectorWrapperTest : public testing::Test
+class VectorWrapperTest : public ::testing::Test
 {
 public:
 	T wrapper;

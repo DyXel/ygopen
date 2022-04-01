@@ -9,7 +9,7 @@
 namespace
 {
 
-class SequentialWrapperTest : public testing::Test
+class SequentialWrapperTest : public ::testing::Test
 {
 protected:
 	static constexpr int VALUE_1 = 444;

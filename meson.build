@@ -19,6 +19,7 @@ ygopen_dep = declare_dependency(dependencies : protobuf_dep, include_directories
 meson.override_dependency('ygopen', ygopen_dep)
 
 ygopen_unit_test_src = files([
+	'test/frame.cpp',
 	'test/place.cpp',
 	'test/sequential_wrapper.cpp',
 	'test/value_wrappers.cpp'
