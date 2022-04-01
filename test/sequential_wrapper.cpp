@@ -1,3 +1,8 @@
+/*
+ * Copyright (c) 2022, Dylam De La Torre <dyxel04@gmail.com>
+ *
+ * SPDX-License-Identifier: AGPL-3.0-or-later
+ */
 #include <gtest/gtest.h>
 #include <ygopen/client/value_wrappers.hpp>
 
