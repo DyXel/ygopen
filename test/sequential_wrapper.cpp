@@ -15,7 +15,9 @@ protected:
 
 TEST_F(SequentialWrapperTest, AppendingWorks)
 {
+	ASSERT_EQ(w.get(), 0);
 	w.set(VALUE_1);
+	ASSERT_EQ(w.get(), VALUE_1);
 	w.set(VALUE_2);
 	ASSERT_EQ(w.get(), VALUE_2);
 	w.dec();
