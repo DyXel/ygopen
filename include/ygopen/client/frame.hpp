@@ -31,8 +31,6 @@ public:
 	static constexpr auto build() noexcept -> T { return T{}; };
 };
 
-} // namespace Detail
-
 enum FieldZoneLimit : size_t
 {
 	FIELD_ZONE_LIMIT_MONSTER = 7U,
@@ -41,6 +39,28 @@ enum FieldZoneLimit : size_t
 	FIELD_ZONE_LIMIT_PENDULUM = 2U,
 	FIELD_ZONE_LIMIT_SKILL = 1U,
 };
+
+} // namespace Detail
+
+constexpr auto zone_seq_lim(YGOpen::Duel::Location loc) noexcept -> size_t
+{
+	using namespace YGOpen::Duel;
+	if(loc == LOCATION_MONSTER_ZONE)
+		return Detail::FIELD_ZONE_LIMIT_MONSTER;
+	if(loc == LOCATION_SPELL_ZONE)
+		return Detail::FIELD_ZONE_LIMIT_SPELL;
+	if(loc == LOCATION_FIELD_ZONE)
+		return Detail::FIELD_ZONE_LIMIT_FIELD;
+	if(loc == LOCATION_PENDULUM_ZONE)
+		return Detail::FIELD_ZONE_LIMIT_PENDULUM;
+	if(loc == LOCATION_SKILL_ZONE)
+		return Detail::FIELD_ZONE_LIMIT_SKILL;
+#ifdef _MSC_VER
+	__assume(0);
+#else
+	__builtin_unreachable();
+#endif // _MSC_VER
+}
 
 template<typename Card, typename CardBuilder = Detail::DefaultBuilder<Card>>
 class BasicFrame
@@ -71,11 +91,15 @@ public:
 
 	private:
 		friend BasicFrame;
-		std::array<Zone, FIELD_ZONE_LIMIT_MONSTER> monster_;
-		std::array<Zone, FIELD_ZONE_LIMIT_SPELL> spell_;
-		std::array<Zone, FIELD_ZONE_LIMIT_FIELD> field_;
-		std::array<Zone, FIELD_ZONE_LIMIT_PENDULUM> pendulum_;
-		std::array<Zone, FIELD_ZONE_LIMIT_SKILL> skill_;
+
+		template<size_t Size>
+		using ZoneArray = std::array<Zone, Size>;
+
+		ZoneArray<zone_seq_lim(YGOpen::Duel::LOCATION_MONSTER_ZONE)> monster_;
+		ZoneArray<zone_seq_lim(YGOpen::Duel::LOCATION_SPELL_ZONE)> spell_;
+		ZoneArray<zone_seq_lim(YGOpen::Duel::LOCATION_FIELD_ZONE)> field_;
+		ZoneArray<zone_seq_lim(YGOpen::Duel::LOCATION_PENDULUM_ZONE)> pendulum_;
+		ZoneArray<zone_seq_lim(YGOpen::Duel::LOCATION_SKILL_ZONE)> skill_;
 
 		// FIXME: Use std::span as return type if we ever move to >=C++20.
 		template<typename T>
@@ -282,8 +306,10 @@ public:
 	{
 		// NOTE: Also assuming that shuffle is done for a single location.
 		assert(!is_pile(*previous));
-		assert(count <= FIELD_ZONE_LIMIT_MONSTER);
-		std::array<uint32_t, FIELD_ZONE_LIMIT_MONSTER> seqs{};
+		constexpr size_t UPPER_BOUND =
+			zone_seq_lim(YGOpen::Duel::LOCATION_MONSTER_ZONE);
+		assert(count <= UPPER_BOUND);
+		std::array<uint32_t, UPPER_BOUND> seqs{};
 		for(size_t i = 0U; i < count; i++)
 		{
 			auto const& p = *previous++;
