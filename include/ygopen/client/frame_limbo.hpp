@@ -123,7 +123,7 @@ public:
 	}
 
 private:
-	using MultiPile = std::array<PileType, Proto::Duel::Controller_ARRAYSIZE>;
+	using MultiPile = std::array<PileType, Duel::CONTROLLER_ARRAY_SIZE>;
 	using OperationCountType = size_t;
 
 	struct ResizeOp
