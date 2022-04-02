@@ -163,9 +163,14 @@ constexpr auto fix_spell_loc_seq(Loc loc, Seq seq) noexcept
 	if((loc & LOCATION_SPELL_ZONE) != 0 && seq > SPELL_ZONE_LIMIT)
 	{
 		if(seq == FIELD_ZONE_SEQUENCE)
+		{
 			loc = LOCATION_FIELD_ZONE;
+		}
 		else // Pendulum zone.
+		{
 			loc = LOCATION_PENDULUM_ZONE;
+			seq--;
+		}
 		seq -= FIELD_ZONE_SEQUENCE;
 	}
 	return {loc, seq};
