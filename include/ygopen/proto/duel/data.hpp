@@ -15,6 +15,9 @@
 namespace YGOpen::Proto::Duel
 {
 
+// Used to indicate that the place doesn't belong to an overlay.
+constexpr int OSEQ_INVALID = -1;
+
 // Check equivalence only of protobuf-exposed methods.
 struct PlaceLess
 {

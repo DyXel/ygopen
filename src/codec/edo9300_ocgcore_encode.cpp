@@ -46,7 +46,8 @@ using CSPos = uint8_t;   // Position type.
 constexpr auto CORE_LOC_INFO_SIZE =
 	sizeof(CPlayer) + sizeof(CSLoc) + sizeof(CSeq) + sizeof(CPos);
 
-constexpr int OSEQ_INVALID = -1;
+// Import definition to avoid using namespace.
+constexpr auto OSEQ_INVALID = YGOpen::Proto::Duel::OSEQ_INVALID;
 
 #include "ocgcore_messages.inl"
 
