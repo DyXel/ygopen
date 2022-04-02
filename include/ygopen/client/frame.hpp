@@ -232,11 +232,11 @@ public:
 		assert(has_card(from));
 		bool const is_from_pile = is_pile(from);
 		bool const is_to_pile = is_pile(to);
-		bool const is_from_not_xyz_mat = from.oseq() < 0;
-		bool const is_to_not_xyz_mat = to.oseq() < 0;
+		bool const is_from_not_mat = from.oseq() < 0;
+		bool const is_to_not_mat = to.oseq() < 0;
 		// Do not refer to a material location while also being a pile.
-		assert(!is_from_pile || is_from_not_xyz_mat);
-		assert(!is_to_pile || is_to_not_xyz_mat);
+		assert(!is_from_pile || is_from_not_mat);
+		assert(!is_to_pile || is_to_not_mat);
 		Card* c = nullptr;
 		if(is_from_pile && is_to_pile)
 		{
@@ -249,7 +249,7 @@ public:
 			auto& p = pile(from);
 			c = take_at_(p, from.seq());
 			auto& z = zone(to);
-			if(is_to_not_xyz_mat)
+			if(is_to_not_mat)
 			{
 				assert(z.card == nullptr);
 				z.card = c;
@@ -262,7 +262,7 @@ public:
 		else if(!is_from_pile && is_to_pile)
 		{
 			auto& z = zone(from);
-			if(is_from_not_xyz_mat)
+			if(is_from_not_mat)
 				std::swap(z.card, c);
 			else
 				c = take_at_(z.materials, from.oseq());
@@ -272,25 +272,25 @@ public:
 		{
 			auto& z1 = zone(from);
 			auto& z2 = zone(to);
-			if(is_from_not_xyz_mat && is_to_not_xyz_mat)
+			if(is_from_not_mat && is_to_not_mat)
 			{
 				assert(z2.card == nullptr && z2.materials.empty());
 				std::swap(c, z1.card);
 				z2.card = c;
 				std::swap(z2.materials, z1.materials);
 			}
-			else if(is_from_not_xyz_mat && !is_to_not_xyz_mat)
+			else if(is_from_not_mat && !is_to_not_mat)
 			{
 				std::swap(c, z1.card);
 				insert_at_(z2.materials, to.oseq(), c);
 			}
-			else if(!is_from_not_xyz_mat && is_to_not_xyz_mat)
+			else if(!is_from_not_mat && is_to_not_mat)
 			{
 				assert(z2.card == nullptr);
 				c = take_at_(z1.materials, from.oseq());
 				z2.card = c;
 			}
-			else // !is_from_not_xyz_mat && !is_to_not_xyz_mat
+			else // !is_from_not_mat && !is_to_not_mat
 			{
 				c = take_at_(z1.materials, from.oseq());
 				insert_at_(z2.materials, to.oseq(), c);
@@ -341,14 +341,14 @@ public:
 		assert(has_card(b));
 		bool const is_a_pile = is_pile(a);
 		bool const is_b_pile = is_pile(b);
-		bool const is_a_not_xyz_mat = a.oseq() < 0;
-		bool const is_b_not_xyz_mat = b.oseq() < 0;
+		bool const is_a_not_mat = a.oseq() < 0;
+		bool const is_b_not_mat = b.oseq() < 0;
 		// Do not refer to a material location while also being a pile.
-		assert(!is_a_pile || is_a_not_xyz_mat);
-		assert(!is_b_pile || is_b_not_xyz_mat);
-		// Do not swap card with materials outside of the field.
-		assert(!is_a_not_xyz_mat || !is_b_pile);
-		assert(!is_b_not_xyz_mat || !is_a_pile);
+		assert(!is_a_pile || is_a_not_mat);
+		assert(!is_b_pile || is_b_not_mat);
+		// Do not swap card with materials outside of field zones.
+		assert(is_a_pile || !is_a_not_mat || zone(a).materials.empty() || !is_b_pile);
+		assert(is_b_pile || !is_b_not_mat || zone(b).materials.empty() || !is_a_pile);
 		if(is_a_pile && is_b_pile)
 		{
 			auto& pa = pile(a);
@@ -359,7 +359,7 @@ public:
 		{
 			auto& p = pile(a);
 			auto& z = zone(b);
-			if(is_b_not_xyz_mat)
+			if(is_b_not_mat)
 				std::swap(p[a.seq()], z.card);
 			else
 				std::swap(p[a.seq()], z.materials[b.oseq()]);
@@ -368,7 +368,7 @@ public:
 		{
 			auto& z = zone(a);
 			auto& p = pile(b);
-			if(is_a_not_xyz_mat)
+			if(is_a_not_mat)
 				std::swap(z.card, p[b.oseq()]);
 			else
 				std::swap(z.materials[a.oseq()], p[b.oseq()]);
@@ -377,20 +377,20 @@ public:
 		{
 			auto& za = zone(a);
 			auto& zb = zone(b);
-			if(is_a_not_xyz_mat && is_b_not_xyz_mat)
+			if(is_a_not_mat && is_b_not_mat)
 			{
 				std::swap(za.card, zb.card);
 				std::swap(za.materials, zb.materials);
 			}
-			else if(is_a_not_xyz_mat && !is_b_not_xyz_mat)
+			else if(is_a_not_mat && !is_b_not_mat)
 			{
 				std::swap(za.card, zb.materials[b.oseq()]);
 			}
-			else if(!is_a_not_xyz_mat && is_b_not_xyz_mat)
+			else if(!is_a_not_mat && is_b_not_mat)
 			{
 				std::swap(za.materials[a.seq()], zb.card);
 			}
-			else // !is_a_not_xyz_mat && !is_b_not_xyz_mat
+			else // !is_a_not_mat && !is_b_not_mat
 			{
 				std::swap(za.materials[a.seq()], zb.materials[b.oseq()]);
 			}
