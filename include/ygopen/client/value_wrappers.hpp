@@ -21,7 +21,7 @@ public:
 
 	constexpr auto get() const noexcept -> const T& { return value_; }
 
-	constexpr auto set(T v) noexcept -> void { value_ = std::move(v); }
+	constexpr auto set(const T& v) noexcept -> void { value_ = v; }
 
 private:
 	T value_;
@@ -42,10 +42,10 @@ public:
 
 	constexpr auto get() const noexcept -> const T& { return *current_value_; }
 
-	constexpr auto set(T v) noexcept -> void
+	constexpr auto set(const T& v) noexcept -> void
 	{
 		if(current_value_ == --values_.cend())
-			values_.emplace_back(std::move(v));
+			values_.emplace_back(v);
 		current_value_++;
 	}
 
