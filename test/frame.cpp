@@ -129,4 +129,42 @@ TYPED_TEST(FrameTest, TrivialCardMovesWork)
 	}
 }
 
+template<typename Frame>
+constexpr auto basic_swap_test(Frame& frame, Location loc1, Location loc2) noexcept -> void
+{
+	YGOpen::Proto::Duel::Place p1;
+	p1.set_loc(loc1);
+	p1.set_oseq(OSEQ_INVALID);
+	auto p2 = p1;
+	p2.set_loc(loc2);
+	auto* const c1 = &frame.card_add(p1);
+	auto* const c2 = &frame.card_add(p2);
+	EXPECT_NE(c1, c2);
+	frame.card_swap(p1, p2);
+	ASSERT_TRUE(frame.has_card(p1));
+	ASSERT_TRUE(frame.has_card(p2));
+	EXPECT_EQ(c1, &frame.card(p2));
+	EXPECT_EQ(c2, &frame.card(p1));
+	frame.card_swap(p2, p1);
+	ASSERT_TRUE(frame.has_card(p1));
+	ASSERT_TRUE(frame.has_card(p2));
+	EXPECT_EQ(c1, &frame.card(p1));
+	EXPECT_EQ(c2, &frame.card(p2));
+}
+
+TYPED_TEST(FrameTest, PileToPileSwapWorks)
+{
+	basic_swap_test(this->frame, LOCATION_MAIN_DECK, LOCATION_HAND);
+}
+
+TYPED_TEST(FrameTest, PileToZoneSwapWorks)
+{
+	basic_swap_test(this->frame, LOCATION_EXTRA_DECK, LOCATION_MONSTER_ZONE);
+}
+
+TYPED_TEST(FrameTest, ZoneToZoneSwapWorks)
+{
+	basic_swap_test(this->frame, LOCATION_MONSTER_ZONE, LOCATION_SPELL_ZONE);
+}
+
 } // namespace
