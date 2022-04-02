@@ -369,7 +369,7 @@ public:
 			auto& z = zone(a);
 			auto& p = pile(b);
 			if(is_a_not_mat)
-				std::swap(z.card, p[b.oseq()]);
+				std::swap(z.card, p[b.seq()]);
 			else
 				std::swap(z.materials[a.oseq()], p[b.oseq()]);
 		}
