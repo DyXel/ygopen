@@ -113,7 +113,7 @@ TYPED_TEST(FrameTest, TrivialCardMovesWork)
 	YGOpen::Proto::Duel::Place p;
 	p.set_loc(*LOC_ALL.cbegin());
 	p.set_oseq(OSEQ_INVALID);
-	frame.card_add(p);
+	auto* const c = &frame.card_add(p);
 	auto it = LOC_ALL.cbegin() + 1;
 	for(size_t i = 0; i < LOC_ALL.size() * 2; ++i, ++it)
 	{
@@ -123,9 +123,13 @@ TYPED_TEST(FrameTest, TrivialCardMovesWork)
 		ASSERT_TRUE(frame.has_card(prev));
 		p.set_loc(*it);
 		p.set_oseq(i >= LOC_ALL.size() && !is_pile(*it) ? 0 : OSEQ_INVALID);
-		frame.card_move(prev, p);
-		EXPECT_FALSE(frame.has_card(prev));
+		auto* const mc = &frame.card_move(prev, p);
 		ASSERT_TRUE(frame.has_card(p));
+		EXPECT_EQ(c, mc);
+		EXPECT_EQ(c, &frame.card(p));
+		EXPECT_FALSE(frame.has_card(prev));
+	}
+}
 	}
 }
 
