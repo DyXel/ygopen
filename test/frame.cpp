@@ -388,4 +388,27 @@ TYPED_TEST(FrameTest, PileSplicingWorks)
 	ASSERT_TRUE(std::equal(p2.cbegin(), p2.cend(), copy.cbegin()));
 }
 
+TYPED_TEST(FrameTest, PileSwapWorks)
+{
+	auto& frame = this->frame;
+	YGOpen::Proto::Duel::Place place1;
+	place1.set_loc(LOCATION_EXTRA_DECK);
+	place1.set_oseq(OSEQ_INVALID);
+	YGOpen::Proto::Duel::Place place2;
+	place2.set_loc(LOCATION_BANISHED);
+	place2.set_oseq(OSEQ_INVALID);
+	frame.pile_resize(place1, 4U);
+	frame.pile_resize(place2, 8U);
+	auto const& pile1 = frame.pile(place1);
+	auto const& pile2 = frame.pile(place2);
+	auto const copy1 = pile1;
+	auto const copy2 = pile2;
+	frame.pile_swap(place1, place2);
+	EXPECT_TRUE(std::equal(pile1.cbegin(), pile1.cend(), copy2.begin()));
+	EXPECT_TRUE(std::equal(pile2.cbegin(), pile2.cend(), copy1.begin()));
+	frame.pile_swap(place2, place1);
+	EXPECT_TRUE(std::equal(pile1.cbegin(), pile1.cend(), copy1.begin()));
+	EXPECT_TRUE(std::equal(pile2.cbegin(), pile2.cend(), copy2.begin()));
+}
+
 } // namespace
