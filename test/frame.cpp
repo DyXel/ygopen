@@ -95,15 +95,21 @@ TYPED_TEST(FrameTest, RemovingCardsWork)
 {
 	auto& frame = this->frame;
 	YGOpen::Proto::Duel::Place p;
-	p.set_oseq(OSEQ_INVALID);
-	for(auto const loc : LOC_ALL)
+	auto run_loop = [&]()
 	{
-		p.set_loc(loc);
-		frame.card_add(p);
-		ASSERT_TRUE(frame.has_card(p));
-		frame.card_remove(p);
-		EXPECT_FALSE(frame.has_card(p));
-	}
+		for(auto const loc : LOC_ALL)
+		{
+			p.set_loc(loc);
+			frame.card_add(p);
+			ASSERT_TRUE(frame.has_card(p));
+			frame.card_remove(p);
+			EXPECT_FALSE(frame.has_card(p));
+		}
+	};
+	p.set_oseq(OSEQ_INVALID);
+	run_loop();
+	p.set_oseq(0);
+	run_loop();
 	expect_empty(frame);
 }
 
