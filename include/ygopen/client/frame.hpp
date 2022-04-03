@@ -347,8 +347,10 @@ public:
 		assert(!is_a_pile || is_a_not_mat);
 		assert(!is_b_pile || is_b_not_mat);
 		// Do not swap card with materials outside of field zones.
-		assert(is_a_pile || !is_a_not_mat || zone(a).materials.empty() || !is_b_pile);
-		assert(is_b_pile || !is_b_not_mat || zone(b).materials.empty() || !is_a_pile);
+		assert(is_a_pile || !is_a_not_mat || zone(a).materials.empty() ||
+		       !is_b_pile);
+		assert(is_b_pile || !is_b_not_mat || zone(b).materials.empty() ||
+		       !is_a_pile);
 		if(is_a_pile && is_b_pile)
 		{
 			auto& pa = pile(a);
@@ -371,7 +373,7 @@ public:
 			if(is_a_not_mat)
 				std::swap(z.card, p[b.seq()]);
 			else
-				std::swap(z.materials[a.oseq()], p[b.oseq()]);
+				std::swap(z.materials[a.oseq()], p[b.seq()]);
 		}
 		else // !is_a_pile && !is_b_pile
 		{
