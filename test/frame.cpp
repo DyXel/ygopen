@@ -91,6 +91,41 @@ TYPED_TEST(FrameTest, AddingAndClearingCardsWork)
 	expect_empty(frame);
 }
 
+TYPED_TEST(FrameTest, AccessThroughPileObjectWorks)
+{
+	auto& frame = this->frame;
+	YGOpen::Proto::Duel::Place p;
+	p.set_loc(LOCATION_HAND);
+	p.set_oseq(OSEQ_INVALID);
+	auto const& c = frame.card_add(p);
+	EXPECT_EQ(&c, &frame.card(p));
+	auto const& pile = frame.pile(p);
+	EXPECT_EQ(&pile, &frame.pile(Controller{p.con()}, Location{p.loc()}));
+	EXPECT_EQ(&c, pile[p.seq()]);
+	EXPECT_EQ(&frame.card(p), pile[p.seq()]);
+}
+
+TYPED_TEST(FrameTest, AccessThroughZoneObjectWorks)
+{
+	auto& frame = this->frame;
+	YGOpen::Proto::Duel::Place p;
+	p.set_loc(LOCATION_MONSTER_ZONE);
+	p.set_oseq(OSEQ_INVALID);
+	auto const& zone = frame.zone(p);
+	EXPECT_EQ(&zone,
+	          &frame.zone(Controller{p.con()}, Location{p.loc()}, p.seq()));
+	EXPECT_EQ(zone.card, nullptr);
+	auto const& c1 = frame.card_add(p);
+	EXPECT_EQ(&c1, &frame.card(p));
+	EXPECT_EQ(&c1, zone.card);
+	p.set_oseq(0);
+	EXPECT_TRUE(zone.materials.empty());
+	auto const& c2 = frame.card_add(p);
+	EXPECT_FALSE(zone.materials.empty());
+	EXPECT_EQ(&c2, &frame.card(p));
+	EXPECT_EQ(&c2, zone.materials[p.oseq()]);
+}
+
 TYPED_TEST(FrameTest, RemovingCardsWork)
 {
 	auto& frame = this->frame;
