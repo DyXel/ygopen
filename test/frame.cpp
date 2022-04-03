@@ -328,4 +328,24 @@ TYPED_TEST(FrameTest, ZoneWithOverlaySwapWorks)
 	EXPECT_EQ(co2, &frame.card(po2));
 }
 
+TYPED_TEST(FrameTest, PileResizingWorks)
+{
+	auto& frame = this->frame;
+	YGOpen::Proto::Duel::Place place;
+	place.set_loc(LOCATION_BANISHED);
+	auto& pile = frame.pile(place);
+	EXPECT_TRUE(pile.empty());
+	constexpr size_t COUNT = 8U;
+	frame.pile_resize(place, COUNT);
+	EXPECT_EQ(pile.size(), COUNT);
+	for(size_t i = 0U; i < COUNT; i++)
+	{
+		place.set_seq(i);
+		EXPECT_TRUE(frame.has_card(place));
+	}
+	frame.pile_resize(place, 0U);
+	EXPECT_TRUE(pile.empty());
+	expect_empty(frame);
+}
+
 } // namespace
