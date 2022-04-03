@@ -6,6 +6,7 @@
 #ifndef YGOPEN_CLIENT_VALUE_WRAPPERS_HPP
 #define YGOPEN_CLIENT_VALUE_WRAPPERS_HPP
 #include <list>
+#include <memory_resource>
 
 namespace YGOpen::Client
 {
@@ -35,8 +36,12 @@ class Sequential
 public:
 	using ValueType = T;
 
-	template<typename Allocator>
-	explicit constexpr Sequential(Allocator* alloc) noexcept
+	explicit constexpr Sequential() noexcept
+		: values_(1U, std::pmr::get_default_resource())
+		, current_value_(values_.cbegin())
+	{}
+
+	explicit constexpr Sequential(std::pmr::memory_resource* alloc) noexcept
 		: values_(1U, alloc), current_value_(values_.cbegin())
 	{}
 
