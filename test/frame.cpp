@@ -130,17 +130,76 @@ TYPED_TEST(FrameTest, TrivialCardMovesWork)
 		EXPECT_FALSE(frame.has_card(prev));
 	}
 }
+
+TYPED_TEST(FrameTest, OverlayCardMovesWork)
+{
+	auto& frame = this->frame;
+	YGOpen::Proto::Duel::Place p1;
+	p1.set_loc(LOCATION_SPELL_ZONE);
+	auto p2 = p1;
+	p2.set_seq(1);
+	auto* const c = &frame.card_add(p1);
+	{
+		auto* const mc = &frame.card_move(p1, p2);
+		ASSERT_FALSE(frame.has_card(p1));
+		ASSERT_TRUE(frame.has_card(p2));
+		EXPECT_EQ(c, mc);
+		EXPECT_EQ(c, &frame.card(p2));
+	}
+	{
+		auto* const mc = &frame.card_move(p2, p1);
+		ASSERT_TRUE(frame.has_card(p1));
+		ASSERT_FALSE(frame.has_card(p2));
+		EXPECT_EQ(c, mc);
+		EXPECT_EQ(c, &frame.card(p1));
+	}
+	YGOpen::Proto::Duel::Place p3;
+	p3.set_loc(LOCATION_GRAVEYARD);
+	p3.set_oseq(OSEQ_INVALID);
+	{
+		auto* const mc = &frame.card_move(p1, p3);
+		ASSERT_FALSE(frame.has_card(p1));
+		ASSERT_TRUE(frame.has_card(p3));
+		EXPECT_EQ(c, mc);
+		EXPECT_EQ(c, &frame.card(p3));
+	}
+	{
+		auto* const mc = &frame.card_move(p3, p1);
+		ASSERT_TRUE(frame.has_card(p1));
+		ASSERT_FALSE(frame.has_card(p3));
+		EXPECT_EQ(c, mc);
+		EXPECT_EQ(c, &frame.card(p1));
+	}
+	YGOpen::Proto::Duel::Place p4;
+	p4.set_loc(LOCATION_PENDULUM_ZONE);
+	p4.set_oseq(OSEQ_INVALID);
+	{
+		auto* const mc = &frame.card_move(p1, p4);
+		ASSERT_FALSE(frame.has_card(p1));
+		ASSERT_TRUE(frame.has_card(p4));
+		EXPECT_EQ(c, mc);
+		EXPECT_EQ(c, &frame.card(p4));
+	}
+	{
+		auto* const mc = &frame.card_move(p4, p1);
+		ASSERT_TRUE(frame.has_card(p1));
+		ASSERT_FALSE(frame.has_card(p4));
+		EXPECT_EQ(c, mc);
+		EXPECT_EQ(c, &frame.card(p1));
 	}
 }
 
 template<typename Frame>
-constexpr auto basic_swap_test(Frame& frame, Location loc1, Location loc2) noexcept -> void
+constexpr auto basic_swap_test(Frame& frame, Location loc1, bool is_mat_1,
+                               Location loc2, bool is_mat_2) noexcept -> void
 {
 	YGOpen::Proto::Duel::Place p1;
 	p1.set_loc(loc1);
-	p1.set_oseq(OSEQ_INVALID);
-	auto p2 = p1;
+	p1.set_oseq(is_mat_1 ? 0 : OSEQ_INVALID);
+	YGOpen::Proto::Duel::Place p2;
+	p2.set_con(1);
 	p2.set_loc(loc2);
+	p2.set_oseq(is_mat_2 ? 0 : OSEQ_INVALID);
 	auto* const c1 = &frame.card_add(p1);
 	auto* const c2 = &frame.card_add(p2);
 	EXPECT_NE(c1, c2);
@@ -158,17 +217,74 @@ constexpr auto basic_swap_test(Frame& frame, Location loc1, Location loc2) noexc
 
 TYPED_TEST(FrameTest, PileToPileSwapWorks)
 {
-	basic_swap_test(this->frame, LOCATION_MAIN_DECK, LOCATION_HAND);
+	basic_swap_test(this->frame, LOCATION_MAIN_DECK, false, LOCATION_HAND,
+	                false);
 }
 
 TYPED_TEST(FrameTest, PileToZoneSwapWorks)
 {
-	basic_swap_test(this->frame, LOCATION_EXTRA_DECK, LOCATION_MONSTER_ZONE);
+	basic_swap_test(this->frame, LOCATION_EXTRA_DECK, false,
+	                LOCATION_MONSTER_ZONE, false);
 }
 
 TYPED_TEST(FrameTest, ZoneToZoneSwapWorks)
 {
-	basic_swap_test(this->frame, LOCATION_MONSTER_ZONE, LOCATION_SPELL_ZONE);
+	basic_swap_test(this->frame, LOCATION_MONSTER_ZONE, false,
+	                LOCATION_SPELL_ZONE, false);
+}
+
+TYPED_TEST(FrameTest, OverlayToZoneSwapWorks)
+{
+	basic_swap_test(this->frame, LOCATION_MONSTER_ZONE, true,
+	                LOCATION_SPELL_ZONE, false);
+}
+
+TYPED_TEST(FrameTest, OverlayToPileSwapWorks)
+{
+	basic_swap_test(this->frame, LOCATION_PENDULUM_ZONE, true,
+	                LOCATION_GRAVEYARD, false);
+}
+
+TYPED_TEST(FrameTest, OverlayToOverlaySwapWorks)
+{
+	basic_swap_test(this->frame, LOCATION_SKILL_ZONE, true, LOCATION_FIELD_ZONE,
+	                true);
+}
+
+TYPED_TEST(FrameTest, ZoneWithOverlaySwapWorks)
+{
+	auto& frame = this->frame;
+	YGOpen::Proto::Duel::Place p1;
+	p1.set_loc(LOCATION_MONSTER_ZONE);
+	p1.set_oseq(OSEQ_INVALID);
+	auto po1 = p1;
+	po1.set_oseq(0);
+	auto po2 = po1;
+	po2.set_con(1);
+	auto p2 = po2;
+	p2.set_oseq(OSEQ_INVALID);
+	auto* const c1 = &frame.card_add(p1);
+	auto* const co1 = &frame.card_add(po1);
+	auto* const c2 = &frame.card_add(p2);
+	auto* const co2 = &frame.card_add(po2);
+	frame.card_swap(p1, p2);
+	ASSERT_TRUE(frame.has_card(p1));
+	ASSERT_TRUE(frame.has_card(po1));
+	ASSERT_TRUE(frame.has_card(p2));
+	ASSERT_TRUE(frame.has_card(po2));
+	EXPECT_EQ(c1, &frame.card(p2));
+	EXPECT_EQ(co1, &frame.card(po2));
+	EXPECT_EQ(c2, &frame.card(p1));
+	EXPECT_EQ(co2, &frame.card(po1));
+	frame.card_swap(p2, p1);
+	ASSERT_TRUE(frame.has_card(p1));
+	ASSERT_TRUE(frame.has_card(po1));
+	ASSERT_TRUE(frame.has_card(p2));
+	ASSERT_TRUE(frame.has_card(po2));
+	EXPECT_EQ(c1, &frame.card(p1));
+	EXPECT_EQ(co1, &frame.card(po1));
+	EXPECT_EQ(c2, &frame.card(p2));
+	EXPECT_EQ(co2, &frame.card(po2));
 }
 
 } // namespace
