@@ -348,4 +348,44 @@ TYPED_TEST(FrameTest, PileResizingWorks)
 	expect_empty(frame);
 }
 
+TYPED_TEST(FrameTest, PileSplicingWorks)
+{
+	auto& frame = this->frame;
+	YGOpen::Proto::Duel::Place place1;
+	place1.set_loc(LOCATION_MAIN_DECK);
+	place1.set_oseq(OSEQ_INVALID);
+	YGOpen::Proto::Duel::Place place2;
+	place2.set_loc(LOCATION_GRAVEYARD);
+	place2.set_oseq(OSEQ_INVALID);
+	constexpr size_t COUNT = 8U;
+	constexpr size_t COUNT_HALF = COUNT / 2U;
+	ASSERT_EQ(COUNT % 2U, 0U); // NOTE: Making sure the number is not odd.
+	frame.pile_resize(place1, COUNT);
+	auto const& p1 = frame.pile(place1);
+	auto const& p2 = frame.pile(place2);
+	auto const copy = p1;
+	// Half of pile from beginning to exact same place (no visible effect).
+	frame.pile_splice(place1, COUNT_HALF, place1, false);
+	ASSERT_EQ(p1.size(), COUNT);
+	ASSERT_TRUE(std::equal(p1.cbegin(), p1.cend(), copy.cbegin()));
+	// Same as before, except reversed.
+	frame.pile_splice(place1, COUNT_HALF, place1, true);
+	ASSERT_EQ(p1.size(), COUNT);
+	ASSERT_TRUE(std::equal(p1.cbegin(), p1.cbegin() + COUNT_HALF,
+	                       copy.crbegin() + COUNT_HALF));
+	// Splice the entire thing to a different pile while reversing.
+	frame.pile_splice(place1, COUNT, place2, true);
+	ASSERT_EQ(p1.size(), 0U);
+	ASSERT_EQ(p2.size(), COUNT);
+	ASSERT_TRUE(
+		std::equal(p2.cbegin(), p2.cbegin() + COUNT_HALF, copy.crbegin()));
+	ASSERT_TRUE(std::equal(p2.cbegin() + COUNT_HALF, p2.cend(), copy.cbegin()));
+	// Move half from the beginning to the top of the pile while reversing.
+	auto place3 = place2;
+	place3.set_seq(COUNT_HALF);
+	frame.pile_splice(place2, COUNT_HALF, place3, true);
+	ASSERT_EQ(p2.size(), COUNT);
+	ASSERT_TRUE(std::equal(p2.cbegin(), p2.cend(), copy.cbegin()));
+}
+
 } // namespace
