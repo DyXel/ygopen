@@ -47,7 +47,7 @@ public:
 	{
 		assert(is_pile(place));
 		bool processing = advance_op_();
-		auto& p = this->pile(place.con(), place.loc());
+		auto& p = this->pile(place);
 		auto& rsz_op = limbo_resize_ops_[op_];
 		rsz_op.prev_size = p.size();
 		if(p.size() < count)
@@ -99,7 +99,7 @@ public:
 	constexpr auto pile_undo_resize(PlaceType const& place) noexcept -> void
 	{
 		assert(is_pile(place));
-		auto& p = this->pile(place.con(), place.loc());
+		auto& p = this->pile(place);
 		auto& rsz_op = limbo_resize_ops_[op_];
 		if(p.size() < rsz_op.prev_size)
 		{
