@@ -14,6 +14,12 @@
 #include <ygopen/duel/constants/location.hpp>
 #include <ygopen/proto/duel/data.hpp>
 
+#ifdef _MSC_VER
+#define UNREACHABLE() __assume(0)
+#else
+#define UNREACHABLE() __builtin_unreachable()
+#endif // _MSC_VER
+
 namespace YGOpen::Client
 {
 
@@ -55,11 +61,7 @@ constexpr auto zone_seq_lim(YGOpen::Duel::Location loc) noexcept -> size_t
 		return Detail::FIELD_ZONE_LIMIT_PENDULUM;
 	if(loc == LOCATION_SKILL_ZONE)
 		return Detail::FIELD_ZONE_LIMIT_SKILL;
-#ifdef _MSC_VER
-	__assume(0);
-#else
-	__builtin_unreachable();
-#endif // _MSC_VER
+	UNREACHABLE();
 }
 
 template<typename Card, typename CardBuilder = Detail::DefaultBuilder<Card>>
@@ -116,11 +118,7 @@ public:
 				return t.pendulum_.data();
 			if(loc == LOCATION_SKILL_ZONE)
 				return t.skill_.data();
-#ifdef _MSC_VER
-			__assume(0);
-#else
-			__builtin_unreachable();
-#endif // _MSC_VER
+			UNREACHABLE();
 		}
 	};
 
@@ -599,11 +597,7 @@ private:
 			return t.banished_[con];
 		if(loc == LOCATION_EXTRA_DECK)
 			return t.extra_deck_[con];
-#ifdef _MSC_VER
-		__assume(0);
-#else
-		__builtin_unreachable();
-#endif // _MSC_VER
+		UNREACHABLE();
 	}
 
 	template<typename T>
