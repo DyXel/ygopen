@@ -131,7 +131,7 @@ public:
 
 	// Const getters.
 
-	constexpr auto builder() const noexcept -> CardBuilder const&
+	[[nodiscard]] constexpr auto builder() const noexcept -> CardBuilder const&
 	{
 		return cards_;
 	}
@@ -147,31 +147,33 @@ public:
 		return static_cast<size_t>(place.oseq()) < z.materials.size();
 	}
 
-	constexpr auto card(PlaceType const& place) const noexcept -> Card const&
+	[[nodiscard]] constexpr auto card(PlaceType const& place) const noexcept
+		-> Card const&
 	{
 		return card_(*this, place);
 	}
 
-	constexpr auto pile(Duel::Controller con, Duel::Location loc) const noexcept
+	[[nodiscard]] constexpr auto pile(Duel::Controller con,
+	                                  Duel::Location loc) const noexcept
 		-> const PileType&
 	{
 		return pile_(*this, con, loc);
 	}
 
-	constexpr auto pile(PlaceType const& place) const noexcept
+	[[nodiscard]] constexpr auto pile(PlaceType const& place) const noexcept
 		-> const PileType&
 	{
 		return pile_(*this, get_con(place), get_loc(place));
 	}
 
-	constexpr auto zone(Duel::Controller con, Duel::Location loc,
-	                    uint32_t seq) const noexcept ->
+	[[nodiscard]] constexpr auto zone(Duel::Controller con, Duel::Location loc,
+	                                  uint32_t seq) const noexcept ->
 		typename Side::Zone const&
 	{
 		return zone_(*this, con, loc, seq);
 	}
 
-	constexpr auto zone(PlaceType const& place) const noexcept ->
+	[[nodiscard]] constexpr auto zone(PlaceType const& place) const noexcept ->
 		typename Side::Zone const&
 	{
 		return zone(get_con(place), get_loc(place), place.seq());
@@ -179,31 +181,37 @@ public:
 
 	// Non-const getters.
 
-	constexpr auto builder() noexcept -> CardBuilder& { return cards_; }
+	[[nodiscard]] constexpr auto builder() noexcept -> CardBuilder&
+	{
+		return cards_;
+	}
 
-	constexpr auto card(PlaceType const& place) noexcept -> Card&
+	[[nodiscard]] constexpr auto card(PlaceType const& place) noexcept -> Card&
 	{
 		return card_(*this, place);
 	}
 
-	constexpr auto pile(Duel::Controller con, Duel::Location loc) noexcept
-		-> PileType&
+	[[nodiscard]] constexpr auto pile(Duel::Controller con,
+	                                  Duel::Location loc) noexcept -> PileType&
 	{
 		return pile_(*this, con, loc);
 	}
 
-	constexpr auto pile(PlaceType const& place) noexcept -> PileType&
+	[[nodiscard]] constexpr auto pile(PlaceType const& place) noexcept
+		-> PileType&
 	{
 		return pile_(*this, get_con(place), get_loc(place));
 	}
 
-	constexpr auto zone(Duel::Controller con, Duel::Location loc,
-	                    uint32_t seq) noexcept -> typename Side::Zone&
+	[[nodiscard]] constexpr auto zone(Duel::Controller con, Duel::Location loc,
+	                                  uint32_t seq) noexcept ->
+		typename Side::Zone&
 	{
 		return zone_(*this, con, loc, seq);
 	}
 
-	constexpr auto zone(PlaceType const& place) noexcept -> typename Side::Zone&
+	[[nodiscard]] constexpr auto zone(PlaceType const& place) noexcept ->
+		typename Side::Zone&
 	{
 		return zone(get_con(place), get_loc(place), place.seq());
 	}
