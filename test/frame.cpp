@@ -18,6 +18,10 @@ public:
 	T frame;
 };
 
+template<typename T>
+class FrameDeathTest : public FrameTest<T>
+{};
+
 struct Empty
 {};
 
@@ -29,6 +33,7 @@ using LimboFrameWithEmpty = YGOpen::Client::LimboFrame<Empty>;
 using FrameTypes = ::testing::Types<FrameWithInt, FrameWithEmpty,
                                     LimboFrameWithInt, LimboFrameWithEmpty>;
 TYPED_TEST_SUITE(FrameTest, FrameTypes);
+TYPED_TEST_SUITE(FrameDeathTest, FrameTypes);
 
 constexpr auto OSEQ_INVALID = YGOpen::Proto::Duel::OSEQ_INVALID;
 
@@ -409,6 +414,43 @@ TYPED_TEST(FrameTest, PileSwapWorks)
 	frame.pile_swap(place2, place1);
 	EXPECT_TRUE(std::equal(pile1.cbegin(), pile1.cend(), copy1.begin()));
 	EXPECT_TRUE(std::equal(pile2.cbegin(), pile2.cend(), copy2.begin()));
+}
+
+TYPED_TEST(FrameDeathTest, BadAccessViaCardDies)
+{
+	auto& frame = this->frame;
+	YGOpen::Proto::Duel::Place place;
+	place.set_loc(LOCATION_MONSTER_ZONE);
+	(void)frame.card_add(place);
+	place.set_loc(LOCATION_MAIN_DECK);
+	(void)frame.card_add(place);
+	// Bad controller range for Pile
+	place.set_con(2);
+	EXPECT_DEATH({ (void)frame.card(place); }, "");
+	// Bad controller range for Zone
+	place.set_loc(LOCATION_MONSTER_ZONE);
+	EXPECT_DEATH({ (void)frame.card(place); }, "");
+	// Bad range withing `materials` container for Zone
+	place.set_con(0);
+	place.set_oseq(1);
+	EXPECT_DEATH({ (void)frame.card(place); }, "");
+	// Zone's `card` is empty
+	place.set_oseq(OSEQ_INVALID);
+	EXPECT_DEATH({ (void)frame.card(place); }, "");
+	// Bad range within Zone (n > zone_seq_limit(loc))
+	place.set_seq(YGOpen::Client::zone_seq_lim(LOCATION_MONSTER_ZONE) + 1U);
+	EXPECT_DEATH({ (void)frame.card(place); }, "");
+	// Incorrect Zone/Pile location
+	place.set_seq(0);
+	place.set_loc(LOCATION_UNSPECIFIED);
+	EXPECT_DEATH({ (void)frame.card(place); }, "");
+	// NOTE: Any value `v` where `popcnt(v)>1` is true should fail.
+	place.set_loc(0b11);
+	EXPECT_DEATH({ (void)frame.card(place); }, "");
+	// Bad range for Pile (n > place.size() - 1)
+	place.set_seq(1);
+	place.set_loc(LOCATION_MAIN_DECK);
+	EXPECT_DEATH({ (void)frame.card(place); }, "");
 }
 
 } // namespace
