@@ -107,6 +107,7 @@ public:
 		template<typename T>
 		static constexpr auto at_(T& t, Duel::Location loc) noexcept -> auto*
 		{
+			assert(is_zone(loc));
 			using namespace YGOpen::Duel;
 			if(loc == LOCATION_MONSTER_ZONE)
 				return t.monster_.data();
@@ -139,8 +140,11 @@ public:
 	[[nodiscard]] constexpr auto has_card(PlaceType const& place) const noexcept
 		-> bool
 	{
+		assert(!is_empty(place));
 		if(is_pile(place))
 			return place.seq() < pile(place).size();
+		assert(is_zone(place));
+		assert(place.seq() < zone_seq_lim(get_loc(place)));
 		auto& z = zone(place);
 		if(place.oseq() < 0)
 			return z.card != nullptr;
@@ -510,8 +514,7 @@ protected:
 	{
 		if(is_pile(place))
 		{
-			auto& p = pile(place);
-			p.insert(p.begin() + place.seq(), &c);
+			insert_at_(pile(place), place.seq(), &c);
 			return;
 		}
 		auto& z = zone(place);
@@ -594,6 +597,8 @@ private:
 	static constexpr auto pile_(T& t, Duel::Controller con,
 	                            Duel::Location loc) noexcept -> auto&
 	{
+		assert(con <= 1);
+		assert(is_pile(loc));
 		using namespace YGOpen::Duel;
 		if(loc == LOCATION_MAIN_DECK)
 			return t.main_deck_[con];
@@ -611,6 +616,8 @@ private:
 	template<typename T>
 	static constexpr auto card_(T& t, PlaceType const& place) noexcept -> auto&
 	{
+		assert(!is_empty(place));
+		assert(t.has_card(place));
 		if(is_pile(place))
 			return *t.pile(place)[place.seq()];
 		auto& z = t.zone(place);
@@ -623,7 +630,8 @@ private:
 	static constexpr auto zone_(T& t, Duel::Controller con, Duel::Location loc,
 	                            uint32_t seq) noexcept -> auto&
 	{
-		assert(!is_pile(loc));
+		assert(con <= 1);
+		assert(seq < zone_seq_lim(loc));
 		return ((t.field_[con])[loc])[seq];
 	}
 
