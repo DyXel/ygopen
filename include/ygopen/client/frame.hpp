@@ -226,7 +226,6 @@ public:
 	{
 		Card& c = construct_card();
 		card_insert(place, c);
-		assert(has_card(place));
 		return c;
 	}
 
@@ -306,7 +305,6 @@ public:
 				insert_at_(z2.materials, to.oseq(), c);
 			}
 		}
-		assert(has_card(to));
 		return *c;
 	}
 
@@ -427,7 +425,6 @@ public:
 				p.pop_back();
 			}
 		}
-		assert(p.size() == count);
 	}
 
 	constexpr auto pile_splice(PlaceType const& from, size_t count,
