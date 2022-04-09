@@ -66,6 +66,12 @@ inline auto is_pile(const Place& place) noexcept -> bool
 	return is_pile(get_loc(place));
 }
 
+// See duel/constants/location.hpp `is_zone`.
+inline auto is_zone(const Place& place) noexcept -> bool
+{
+	return is_zone(get_loc(place));
+}
+
 } // namespace YGOpen::Proto::Duel
 
 #endif // YGOPEN_PROTO_DUEL_DATA_HPP

@@ -39,6 +39,14 @@ constexpr auto is_pile(Location loc) noexcept -> bool
 	               LOCATION_BANISHED | LOCATION_EXTRA_DECK)) != 0U;
 }
 
+// Check if Location loc corresponds to zone.
+constexpr auto is_zone(Location loc) noexcept -> bool
+{
+	return (loc &
+	        (LOCATION_MONSTER_ZONE | LOCATION_SPELL_ZONE | LOCATION_FIELD_ZONE |
+	         LOCATION_PENDULUM_ZONE | LOCATION_SKILL_ZONE)) != 0U;
+}
+
 } // namespace YGOpen::Duel
 
 #endif // YGOPEN_DUEL_CONSTANTS_LOCATION_HPP
