@@ -18,11 +18,16 @@ ygopen_lib = static_library('ygopen', [ygopen_src, generated_proto], dependencie
 ygopen_dep = declare_dependency(dependencies : protobuf_dep, include_directories : [ygopen_inc, ygopen_lib.private_dir_include()], link_with : ygopen_lib)
 meson.override_dependency('ygopen', ygopen_dep)
 
-ygopen_unit_test_src = files([
+ygopen_unit_tests_src = files([
 	'test/frame.cpp',
 	'test/place.cpp',
 	'test/sequential_wrapper.cpp',
-	'test/value_wrappers.cpp'
+	'test/value_wrappers.cpp',
 ])
 
-test('unit tests', executable('ut_exe', ygopen_unit_test_src, dependencies : [gtest_dep, ygopen_dep]))
+ygopen_unit_tests_exe = executable('ygopen_ut', ygopen_unit_tests_src,
+	build_by_default : false,
+	dependencies : [gtest_dep, ygopen_dep]
+)
+
+test('ygopen unit tests', ygopen_unit_tests_exe)
