@@ -21,8 +21,8 @@ constexpr auto popcnt(T x) noexcept -> int
 #if defined(__cpp_lib_bitops)
 	return std::popcount(x);
 #elif defined(__GNUC__) || defined(__clang__)
-	if constexpr(std::is_same_v<unsigned long, T>)
-		return __builtin_popcountl(x);
+	if constexpr(std::numeric_limits<T>::digits > 32)
+		return __builtin_popcountll(x);
 	else
 		return __builtin_popcount(x);
 #else
