@@ -15,7 +15,7 @@ namespace YGOpen::Bit
 
 // Counts the number of 1 bits in `x`, also called "Hamming weight".
 template<typename T>
-constexpr auto popcnt(T x) noexcept -> int
+constexpr auto popcnt(T x) noexcept -> unsigned
 {
 	static_assert(std::is_unsigned_v<T>);
 #if defined(__cpp_lib_bitops)
@@ -26,7 +26,7 @@ constexpr auto popcnt(T x) noexcept -> int
 	else
 		return __builtin_popcount(x);
 #else
-	int count = 0;
+	unsigned count = 0;
 	while(x)
 	{
 		count++;
@@ -42,16 +42,16 @@ template<typename T>
 constexpr auto choosel(unsigned count, T x) noexcept -> T
 {
 	static_assert(std::is_unsigned_v<T>);
-	T chosen_bits = 0U;
-	int current_bit = std::numeric_limits<T>::digits;
-	while(current_bit != 0U)
+	T chosen = 0U;
+	unsigned i = std::numeric_limits<T>::digits;
+	while(i != 0U)
 	{
-		chosen_bits |= x & (1U << (current_bit - 1U));
-		if(static_cast<unsigned>(popcnt(chosen_bits)) >= count)
+		chosen |= x & (1U << (i - 1U));
+		if(popcnt(chosen) >= count)
 			break;
-		current_bit--;
+		i--;
 	}
-	return chosen_bits;
+	return chosen;
 }
 
 // Chooses at most `count` 1 bits from `x`, starting from the least significant
@@ -60,15 +60,14 @@ template<typename T>
 constexpr auto chooser(unsigned count, T x) noexcept -> T
 {
 	static_assert(std::is_unsigned_v<T>);
-	T chosen_bits = 0U;
-	int current_bit = 0;
-	while(current_bit <= std::numeric_limits<T>::digits &&
-	      static_cast<unsigned>(popcnt(chosen_bits)) < count)
+	T chosen = 0U;
+	unsigned i = 0;
+	while(i <= std::numeric_limits<T>::digits && popcnt(chosen) < count)
 	{
-		chosen_bits |= x & (1U << current_bit);
-		current_bit++;
+		chosen |= x & (1U << i);
+		i++;
 	}
-	return chosen_bits;
+	return chosen;
 }
 
 } // namespace YGOpen::Bit
