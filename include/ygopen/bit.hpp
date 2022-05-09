@@ -5,9 +5,10 @@
  */
 #ifndef YGOPEN_BIT_HPP
 #define YGOPEN_BIT_HPP
-#ifdef __cpp_lib_bitops
+#if __has_include(<bit>)
 #include <bit>
 #endif
+#include <limits>
 #include <type_traits>
 
 namespace YGOpen::Bit
@@ -19,12 +20,12 @@ constexpr auto popcnt(T x) noexcept -> unsigned
 {
 	static_assert(std::is_unsigned_v<T>);
 #if defined(__cpp_lib_bitops)
-	return std::popcount(x);
+	return static_cast<unsigned>(std::popcount(x));
 #elif defined(__GNUC__) || defined(__clang__)
 	if constexpr(std::numeric_limits<T>::digits > 32)
-		return __builtin_popcountll(x);
+		return static_cast<unsigned>(__builtin_popcountll(x));
 	else
-		return __builtin_popcount(x);
+		return static_cast<unsigned>(__builtin_popcount(x));
 #else
 	unsigned count = 0;
 	while(x)
