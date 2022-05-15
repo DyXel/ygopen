@@ -46,7 +46,7 @@ constexpr std::array LOC_ALL{LOCATION_MAIN_DECK,     LOCATION_HAND,
                              LOCATION_PENDULUM_ZONE, LOCATION_SKILL_ZONE};
 
 template<typename Frame>
-constexpr auto expect_empty(Frame const& frame) noexcept -> void
+auto expect_empty(Frame const& frame) noexcept -> void
 {
 	using namespace YGOpen::Client;
 	for(uint8_t con = 0; con <= 1; con++)
@@ -236,8 +236,8 @@ TYPED_TEST(FrameTest, OverlayCardMovesWork)
 }
 
 template<typename Frame>
-constexpr auto basic_swap_test(Frame& frame, Location loc1, bool is_mat_1,
-                               Location loc2, bool is_mat_2) noexcept -> void
+auto basic_swap_test(Frame& frame, Location loc1, bool is_mat_1, Location loc2,
+                     bool is_mat_2) noexcept -> void
 {
 	YGOpen::Proto::Duel::Place p1;
 	p1.set_loc(loc1);
