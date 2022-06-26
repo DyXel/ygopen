@@ -144,9 +144,13 @@ message Msg
 
 			enum ChainStatus
 			{
-				CHAIN_STATUS_SOLVING = 0;
-				CHAIN_STATUS_NEGATED = 1;
-				CHAIN_STATUS_SOLVED  = 2;
+				// NOTE: CHAINING is never actually sent, but it's the default
+				// status when a Chain is pushed on top of the ChainStack.
+				CHAIN_STATUS_CHAINING    = 0;
+				CHAIN_STATUS_CHAINED     = 1;
+				CHAIN_STATUS_SOLVING     = 2;
+				CHAIN_STATUS_ACT_NEGATED = 3;
+				CHAIN_STATUS_EFF_NEGATED = 4;
 			}
 
 			message Confirm
