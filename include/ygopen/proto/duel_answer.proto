@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, Dylam De La Torre <dyxel04@gmail.com>
+ * Copyright (c) 2022, Dylam De La Torre <dyxel04@gmail.com>
  *
  * SPDX-License-Identifier: AGPL-3.0-or-later
  */
@@ -16,15 +16,15 @@ option optimize_for = LITE_RUNTIME;
 
 message Answer
 {
+	message Indexes
+	{
+		// Corresponds to the indexes the request message had for its
+		// repeated fields.
+		repeated uint32 values = 1;
+	}
+
 	message SelectCard
 	{
-		message Indexes
-		{
-			// Corresponds to the indexes the request message had for its
-			// repeated fields.
-			repeated uint32 values = 1;
-		}
-
 		oneof t
 		{
 			// Cancel the selection. Only if it can be canceled.
@@ -105,7 +105,13 @@ message Answer
 
 	message Sort
 	{
-		// TODO
+		oneof t
+		{
+			// Skip sorting, let the core decide the order.
+			bool skip       = 1;
+			// List of sorted cards.
+			Indexes indexes = 2;
+		}
 	}
 
 	oneof t
@@ -136,7 +142,7 @@ message Answer
 		bool select_yes_no               = 12;
 		// Zone or zones to select.
 		SelectZone select_zone           = 13;
-		// TODO
+		// Indexes of cards sorted by client, skippable.
 		Sort sort                        = 14;
 	}
 }

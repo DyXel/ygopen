@@ -1261,6 +1261,16 @@ auto encode_one(google::protobuf::Arena& arena, IEncodeContext& context,
 		             [&]() { return select_zone->add_places(); });
 		break;
 	}
+	case MSG_SORT_CHAIN:
+	case MSG_SORT_CARD:
+	{
+		// NOTE: MSG_SORT_CHAIN was used often in old versions, nowadays its
+		// sent *only* when selecting the order to apply multiple attack costs.
+		auto* sort = create_request()->mutable_sort();
+		read_card_list<CCount, CLoc, CSeq, void>(
+			data, [&] { return sort->add_places(); });
+		break;
+	}
 		/*
 		 * Special messages.
 		 */

@@ -224,7 +224,18 @@ auto decode_one_answer(Proto::Duel::Msg::Request const& request,
 	}
 	case Answer::kSort:
 	{
-		// TODO
+		auto const& sort = answer.sort();
+		if(sort.t_case() == Answer::Sort::kSkip)
+		{
+			response_i(-1);
+			break;
+		}
+		auto const& indexes = sort.indexes().values();
+		out.resize(sizeof(uint8_t) + (sizeof(int8_t) * indexes.size()));
+		auto* ptr = out.data();
+		write(ptr, static_cast<uint8_t>(indexes.size()));
+		for(auto const index : indexes)
+			write(ptr, static_cast<int8_t>(index));
 		break;
 	}
 	default:
