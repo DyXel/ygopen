@@ -12,6 +12,17 @@ package YGOpen.Proto.Duel;
 option cc_enable_arenas = true;
 option optimize_for = LITE_RUNTIME;
 
+enum ChainStatus
+{
+	// NOTE: CHAINING is never actually sent, but it's the default status when
+	// a Chain is pushed on top of the ChainStack.
+	CHAIN_STATUS_CHAINING    = 0;
+	CHAIN_STATUS_CHAINED     = 1;
+	CHAIN_STATUS_SOLVING     = 2;
+	CHAIN_STATUS_ACT_NEGATED = 3;
+	CHAIN_STATUS_EFF_NEGATED = 4;
+}
+
 message Chain
 {
 	Place card_place = 1;

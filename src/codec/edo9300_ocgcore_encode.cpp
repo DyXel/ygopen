@@ -643,13 +643,13 @@ auto encode_one(google::protobuf::Arena& arena, IEncodeContext& context,
 	case MSG_CHAIN_NEGATED:
 	case MSG_CHAIN_DISABLED:
 	{
-		static constexpr Msg::Event::Meta::ChainStatus MAP[6U] = {
-			Msg::Event::Meta::CHAIN_STATUS_CHAINED,
-			Msg::Event::Meta::CHAIN_STATUS_SOLVING,
-			static_cast<Msg::Event::Meta::ChainStatus>(0), // NOTE: CHAIN_SOLVED
-			static_cast<Msg::Event::Meta::ChainStatus>(0), // NOTE: CHAIN_END
-			Msg::Event::Meta::CHAIN_STATUS_ACT_NEGATED,
-			Msg::Event::Meta::CHAIN_STATUS_EFF_NEGATED,
+		static constexpr ChainStatus MAP[6U] = {
+			ChainStatus::CHAIN_STATUS_CHAINED,
+			ChainStatus::CHAIN_STATUS_SOLVING,
+			static_cast<ChainStatus>(0), // NOTE: CHAIN_SOLVED
+			static_cast<ChainStatus>(0), // NOTE: CHAIN_END
+			ChainStatus::CHAIN_STATUS_ACT_NEGATED,
+			ChainStatus::CHAIN_STATUS_EFF_NEGATED,
 		};
 		auto* meta = create_event()->mutable_meta();
 		meta->set_chain_status(MAP[core_msg - MSG_CHAINED]);
