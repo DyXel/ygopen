@@ -119,7 +119,7 @@ constexpr auto read_pos(uint8_t const*& ptr) noexcept -> auto
 
 constexpr auto read_race(uint8_t const*& ptr) noexcept -> auto
 {
-	return static_cast<uint64_t>(read<uint32_t>(ptr, "race"));
+	return read<uint64_t>(ptr, "race");
 }
 
 constexpr auto read_reason(uint8_t const*& ptr) noexcept -> auto
