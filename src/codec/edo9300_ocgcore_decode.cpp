@@ -5,6 +5,7 @@
  */
 #include "ygopen/codec/edo9300_ocgcore_decode.hpp"
 
+#include <cstring>
 #include <ygopen/duel/constants/phase.hpp>
 #include <ygopen/proto/duel/answer.hpp>
 #include <ygopen/proto/duel/msg.hpp>
