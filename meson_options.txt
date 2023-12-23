@@ -1,0 +1,9 @@
+option('pb_optimize_for',
+	type : 'combo',
+	choices : ['speed', 'code_size', 'lite'],
+	value : 'lite',
+	yield : true,
+	description : 'Which optimize_for option to use when generating protobuf ' +
+	              'code. If "lite" is chosen then the depedency to look up ' +
+	              'will be "protobuf-lite" rather than "protobuf"'
+)

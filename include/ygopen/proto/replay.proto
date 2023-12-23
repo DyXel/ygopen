@@ -12,7 +12,6 @@ package YGOpen.Proto;
 import "duel_msg.proto";
 
 option cc_enable_arenas = true;
-option optimize_for = LITE_RUNTIME;
 
 message Replay
 {

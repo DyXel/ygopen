@@ -10,7 +10,6 @@ syntax = "proto3";
 package YGOpen.Proto.Duel;
 
 option cc_enable_arenas = true;
-option optimize_for = LITE_RUNTIME;
 
 enum ChainStatus
 {

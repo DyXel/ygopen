@@ -1,5 +1,12 @@
 protoc = find_program('protoc')
-protoc_gen = generator(protoc, output : ['@BASENAME@.pb.cc', '@BASENAME@.pb.h'], arguments : ['--proto_path=@CURRENT_SOURCE_DIR@', '--cpp_out=@BUILD_DIR@', '@INPUT@'])
+protoc_gen = generator(protoc,
+	output : ['@BASENAME@.pb.cc', '@BASENAME@.pb.h'],
+	arguments : [
+		'--proto_path=@CURRENT_SOURCE_DIR@',
+		'--cpp_out=@0@:@BUILD_DIR@'.format(pb_optimize_for),
+		'@INPUT@',
+	]
+)
 
 ygopen_proto_src = files([
 	'duel_answer.proto',
