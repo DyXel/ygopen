@@ -15,6 +15,7 @@ ygopen_proto_src = files(
 	'duel_data.proto',
 	'duel_msg.proto',
 	'replay.proto',
+	'user.proto',
 )
 
 generated_proto = protoc_gen.process(ygopen_proto_src)
