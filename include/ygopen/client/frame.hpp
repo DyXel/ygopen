@@ -10,15 +10,10 @@
 #include <cassert>
 #include <forward_list>
 #include <vector>
+#include <ygopen/detail/config.hpp>
 #include <ygopen/duel/constants/controller.hpp>
 #include <ygopen/duel/constants/location.hpp>
 #include <ygopen/proto/duel/data.hpp>
-
-#ifdef _MSC_VER
-#define UNREACHABLE() __assume(0)
-#else
-#define UNREACHABLE() __builtin_unreachable()
-#endif // _MSC_VER
 
 namespace YGOpen::Client
 {
@@ -62,7 +57,7 @@ enum FieldZoneLimit : size_t
 		return Detail::FIELD_ZONE_LIMIT_PENDULUM;
 	if(loc == LOCATION_SKILL_ZONE)
 		return Detail::FIELD_ZONE_LIMIT_SKILL;
-	UNREACHABLE();
+	YGOPEN_UNREACHABLE();
 }
 
 template<typename Card, typename CardBuilder = Detail::DefaultBuilder<Card>>
@@ -121,7 +116,7 @@ public:
 				return t.pendulum_.data();
 			if(loc == LOCATION_SKILL_ZONE)
 				return t.skill_.data();
-			UNREACHABLE();
+			YGOPEN_UNREACHABLE();
 		}
 	};
 
@@ -559,6 +554,7 @@ protected:
 		// NOTE: std::forward_list::remove attempts to remove all elements that
 		// match, but we know that they are unique so no need to traverse the
 		// entire container after the first removal is performed.
+		bool destructed = false;
 		const auto end = cards_.m.cend();
 		auto prev_it = cards_.m.before_begin();
 		using Iter = typename decltype(cards_.m)::iterator;
@@ -567,8 +563,10 @@ protected:
 			if(&*it != &c)
 				continue;
 			cards_.m.erase_after(prev_it);
+			destructed = true;
 			break;
 		}
+		assert(destructed);
 	}
 
 private:
@@ -612,7 +610,7 @@ private:
 			return t.banished_[con];
 		if(loc == LOCATION_EXTRA_DECK)
 			return t.extra_deck_[con];
-		UNREACHABLE();
+		YGOPEN_UNREACHABLE();
 	}
 
 	template<typename T>
