@@ -1,0 +1,30 @@
+/*
+ * Copyright (c) 2024, Dylam De La Torre <dyxel04@gmail.com>
+ *
+ * SPDX-License-Identifier: AGPL-3.0-or-later
+ */
+syntax = "proto3";
+
+// TODO: Documentation.
+
+package YGOpen.Proto;
+
+option cc_enable_arenas = true;
+
+message Banlist
+{
+	string id                   = 1;
+	repeated uint32 forbidden   = 2;
+	repeated uint32 limited     = 3;
+	repeated uint32 semilimited = 4;
+	repeated uint32 whitelist   = 5; // NOTE: If > 0 then this is a whitelist.
+
+	// Metadata:
+	string title = 6; // Title for this banlist.
+	string notes = 7; // Banlist flavor notes (meta cards, etc.).
+}
+
+message BanlistError
+{
+	// TODO
+}

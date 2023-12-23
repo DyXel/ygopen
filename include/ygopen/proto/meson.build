@@ -8,11 +8,13 @@ protoc_gen = generator(protoc,
 	]
 )
 
-ygopen_proto_src = files([
+ygopen_proto_src = files(
+	'banlist.proto',
+	'deck.proto',
 	'duel_answer.proto',
 	'duel_data.proto',
 	'duel_msg.proto',
-	'replay.proto'
-])
+	'replay.proto',
+)
 
 generated_proto = protoc_gen.process(ygopen_proto_src)

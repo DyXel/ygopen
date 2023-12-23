@@ -32,13 +32,15 @@ ygopen_dep = declare_dependency(
 )
 meson.override_dependency('ygopen', ygopen_dep)
 
-ygopen_unit_tests_src = files([
+ygopen_unit_tests_src = files(
+	'test/banlist.cpp',
 	'test/bit.cpp',
+	'test/deck.cpp',
 	'test/frame.cpp',
 	'test/place.cpp',
 	'test/sequential_wrapper.cpp',
 	'test/value_wrappers.cpp',
-])
+)
 
 ygopen_unit_tests_exe = executable('ygopen_ut', ygopen_unit_tests_src,
 	build_by_default : false,

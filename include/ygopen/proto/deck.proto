@@ -1,0 +1,118 @@
+/*
+ * Copyright (c) 2024, Dylam De La Torre <dyxel04@gmail.com>
+ *
+ * SPDX-License-Identifier: AGPL-3.0-or-later
+ */
+syntax = "proto3";
+
+// TODO: Documentation.
+
+package YGOpen.Proto;
+
+option cc_enable_arenas = true;
+
+enum DeckType
+{
+	DECK_TYPE_UNSPECIFIED = 0;
+	DECK_TYPE_MAIN_DECK   = 1;
+	DECK_TYPE_SIDE_DECK   = 2;
+	DECK_TYPE_EXTRA_DECK  = 3;
+}
+
+message Deck
+{
+	message Data
+	{
+		repeated uint32 main_cards  = 1;
+		repeated uint32 extra_cards = 2;
+		repeated uint32 side_cards  = 3;
+	}
+	Data data               = 1;
+
+	// Metadata:
+	repeated uint32 useful  = 2; // Useful cards for the deck.
+	string title            = 3; // Deck title.
+	string banlist_id       = 4; // Banlist ID where the deck should be used.
+	string notes            = 5; // Deck notes (guide, combos, etc.).
+}
+
+message DeckLimits
+{
+	message Limit
+	{
+		uint32 min = 1;
+		// NOTE: A negative number should be a implementation defined limit.
+		int32 max = 2;
+	}
+	Limit main  = 1;
+	Limit extra = 2;
+	Limit side  = 3;
+}
+
+message DeckError
+{
+	// The following cards are banlisted and cannot be used:
+	message Banlisted
+	{
+		message ReasonAndCode
+		{
+			enum ReasonType
+			{
+				// The card is not whitelisted in the current banlist.
+				RT_NOT_ON_WHITELIST = 0;
+				// The card is semilimited and the deck has >2 copies.
+				RT_SEMILIMITED      = 1;
+				// The card is limited and the deck has >1 copies.
+				RT_LIMITED          = 2;
+				// The card is forbidden and the deck has >0 copies.
+				RT_FORBIDDEN        = 3;
+			}
+			ReasonType type = 1;
+			uint32 card     = 2;
+		}
+
+		repeated ReasonAndCode reasons_and_cards = 1;
+	}
+
+	// The following cards have too many copies (usually >3).
+	message ExcessiveCopies
+	{
+		repeated uint32 cards = 1;
+	}
+
+	// The following cards could not be found on any database.
+	message InvalidCard
+	{
+		repeated uint32 cards = 1;
+	}
+
+	// The following cards are in the wrong deck type:
+	message MixedCard
+	{
+		// These must be in the Main Deck, but were found in the Extra Deck.
+		repeated uint32 main_on_extra_cards = 1;
+		// These must be in the Extra Deck, but were found in the Main Deck.
+		repeated uint32 extra_on_main_cards = 2;
+	}
+
+	// The number of cards for the mentioned deck is out of the set limit.
+	message OutOfLimit
+	{
+		DeckType deck_type = 1;
+		enum LimitType
+		{
+			LT_UNDER = 0;
+			LT_OVER  = 1;
+		}
+		LimitType limit_type = 2;
+
+		uint32 expected = 3; // number of cards expected "at least".
+		uint32 got = 4; // number of cards actually given.
+	}
+
+	Banlisted banlisted              = 1;
+	ExcessiveCopies excessive_copies = 2;
+	InvalidCard invalid_card         = 3;
+	MixedCard mixed_card             = 4;
+	OutOfLimit out_of_limit          = 5;
+}
