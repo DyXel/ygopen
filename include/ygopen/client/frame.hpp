@@ -34,7 +34,7 @@ class DefaultBuilder
 public:
 	explicit constexpr DefaultBuilder() noexcept = default;
 
-	static constexpr auto build() noexcept -> T { return T{}; };
+	[[nodiscard]] static constexpr auto build() noexcept -> T { return T{}; };
 };
 
 enum FieldZoneLimit : size_t
@@ -48,7 +48,8 @@ enum FieldZoneLimit : size_t
 
 } // namespace Detail
 
-constexpr auto zone_seq_lim(YGOpen::Duel::Location loc) noexcept -> size_t
+[[nodiscard]] constexpr auto zone_seq_lim(YGOpen::Duel::Location loc) noexcept
+	-> size_t
 {
 	using namespace YGOpen::Duel;
 	if(loc == LOCATION_MONSTER_ZONE)
@@ -80,13 +81,14 @@ public:
 			PileType materials;
 		};
 
-		constexpr auto operator[](Duel::Location loc) const noexcept
-			-> Zone const*
+		[[nodiscard]] constexpr auto operator[](
+			Duel::Location loc) const noexcept -> Zone const*
 		{
 			return at_(*this, loc);
 		}
 
-		constexpr auto operator[](Duel::Location loc) noexcept -> Zone*
+		[[nodiscard]] constexpr auto operator[](Duel::Location loc) noexcept
+			-> Zone*
 		{
 			return at_(*this, loc);
 		}
@@ -503,7 +505,10 @@ public:
 protected:
 	// Provide easy access to field_ for users that extend this class.
 
-	constexpr auto field() noexcept -> FieldType& { return field_; }
+	[[nodiscard]] constexpr auto field() noexcept -> FieldType&
+	{
+		return field_;
+	}
 
 	// Methods that compose add and remove operations.
 
@@ -544,7 +549,7 @@ protected:
 		return *c;
 	}
 
-	constexpr auto construct_card() noexcept -> Card&
+	[[nodiscard]] constexpr auto construct_card() noexcept -> Card&
 	{
 		return cards_.m.emplace_front(cards_.build());
 	}

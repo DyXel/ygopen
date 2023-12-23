@@ -41,37 +41,42 @@ public:
 
 	// Const getters.
 
-	constexpr auto frame() const noexcept -> Frame const& { return frame_; }
+	[[nodiscard]] constexpr auto frame() const noexcept -> Frame const&
+	{
+		return frame_;
+	}
 
-	constexpr auto chain_stack() const noexcept
+	[[nodiscard]] constexpr auto chain_stack() const noexcept
 		-> Wrapper<ChainStackType> const&
 	{
 		return chain_stack_;
 	}
 
-	constexpr auto turn() const noexcept -> Wrapper<TurnType> const&
+	[[nodiscard]] constexpr auto turn() const noexcept
+		-> Wrapper<TurnType> const&
 	{
 		return turn_;
 	}
 
-	constexpr auto turn_controller() const noexcept
+	[[nodiscard]] constexpr auto turn_controller() const noexcept
 		-> Wrapper<TurnControllerType> const&
 	{
 		return turn_controller_;
 	}
 
-	constexpr auto lp(YGOpen::Duel::Controller con) const noexcept
+	[[nodiscard]] constexpr auto lp(YGOpen::Duel::Controller con) const noexcept
 		-> Wrapper<LPType> const&
 	{
 		return lp_[static_cast<size_t>(con)];
 	}
 
-	constexpr auto phase() const noexcept -> Wrapper<PhaseType> const&
+	[[nodiscard]] constexpr auto phase() const noexcept
+		-> Wrapper<PhaseType> const&
 	{
 		return phase_;
 	}
 
-	constexpr auto blocked_zones() const noexcept
+	[[nodiscard]] constexpr auto blocked_zones() const noexcept
 		-> Wrapper<BlockedZonesType> const&
 	{
 		return blocked_zones_;
@@ -79,28 +84,38 @@ public:
 
 	// Non-const getters.
 
-	constexpr auto frame() noexcept -> Frame& { return frame_; }
+	[[nodiscard]] constexpr auto frame() noexcept -> Frame& { return frame_; }
 
-	constexpr auto chain_stack() noexcept -> Wrapper<ChainStackType>&
+	[[nodiscard]] constexpr auto chain_stack() noexcept
+		-> Wrapper<ChainStackType>&
 	{
 		return chain_stack_;
 	}
 
-	constexpr auto turn() noexcept -> Wrapper<TurnType>& { return turn_; }
+	[[nodiscard]] constexpr auto turn() noexcept -> Wrapper<TurnType>&
+	{
+		return turn_;
+	}
 
-	constexpr auto turn_controller() noexcept -> Wrapper<TurnControllerType>&
+	[[nodiscard]] constexpr auto turn_controller() noexcept
+		-> Wrapper<TurnControllerType>&
 	{
 		return turn_controller_;
 	}
 
-	constexpr auto lp(YGOpen::Duel::Controller con) noexcept -> Wrapper<LPType>&
+	[[nodiscard]] constexpr auto lp(YGOpen::Duel::Controller con) noexcept
+		-> Wrapper<LPType>&
 	{
 		return lp_[static_cast<size_t>(con)];
 	}
 
-	constexpr auto phase() noexcept -> Wrapper<PhaseType>& { return phase_; }
+	[[nodiscard]] constexpr auto phase() noexcept -> Wrapper<PhaseType>&
+	{
+		return phase_;
+	}
 
-	constexpr auto blocked_zones() noexcept -> Wrapper<BlockedZonesType>&
+	[[nodiscard]] constexpr auto blocked_zones() noexcept
+		-> Wrapper<BlockedZonesType>&
 	{
 		return blocked_zones_;
 	}

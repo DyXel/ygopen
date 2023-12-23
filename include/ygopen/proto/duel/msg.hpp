@@ -10,4 +10,9 @@
 #include <duel_msg.pb.h>
 // clang-format on
 
+namespace YGOpen::Proto::Duel
+{
+
+} // namespace YGOpen::Proto::Duel
+
 #endif // YGOPEN_PROTO_DUEL_MSG_HPP

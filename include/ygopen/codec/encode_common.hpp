@@ -54,7 +54,7 @@ struct EncodeOneResult
 		// `msg` is non-null.
 		OK,
 		// The encoder knows the message type but will not encode it because
-		// encoding this message alone yields no useful information alone.
+		// encoding this message alone yields no useful information.
 		// `bytes_read` has number of bytes that were read or skipped.
 		// `msg` is null.
 		SWALLOWED,

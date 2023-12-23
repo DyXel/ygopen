@@ -69,7 +69,8 @@ constexpr auto operator!(QueryCacheHit rhs) noexcept -> bool
 }
 
 template<bool use_cache = false, typename Frame>
-auto parse_query(Frame& frame, Proto::Duel::Msg::Query const& query) noexcept
+[[nodiscard]] auto parse_query(Frame& frame,
+                               Proto::Duel::Msg::Query const& query) noexcept
 	-> QueryCacheHit
 {
 	auto hits = QueryCacheHit::UNSPECIFIED;

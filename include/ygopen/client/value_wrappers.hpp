@@ -20,7 +20,10 @@ public:
 
 	explicit constexpr Value() noexcept : value_() {}
 
-	constexpr auto get() const noexcept -> const T& { return value_; }
+	[[nodiscard]] constexpr auto get() const noexcept -> const T&
+	{
+		return value_;
+	}
 
 	constexpr auto set(const T& v) noexcept -> void { value_ = v; }
 
@@ -45,7 +48,10 @@ public:
 		: values_(1U, alloc), current_value_(values_.cbegin())
 	{}
 
-	constexpr auto get() const noexcept -> const T& { return *current_value_; }
+	[[nodiscard]] constexpr auto get() const noexcept -> const T&
+	{
+		return *current_value_;
+	}
 
 	constexpr auto set(const T& v) noexcept -> void
 	{

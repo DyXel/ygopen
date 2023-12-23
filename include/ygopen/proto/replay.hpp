@@ -6,8 +6,12 @@
 #ifndef YGOPEN_PROTO_REPLAY_HPP
 #define YGOPEN_PROTO_REPLAY_HPP
 // clang-format off
-#include "duel/msg.hpp"
 #include <replay.pb.h>
 // clang-format on
+
+namespace YGOpen::Proto
+{
+
+} // namespace YGOpen::Proto
 
 #endif // YGOPEN_PROTO_REPLAY_HPP

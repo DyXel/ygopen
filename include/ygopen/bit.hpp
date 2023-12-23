@@ -16,7 +16,7 @@ namespace YGOpen::Bit
 
 // Counts the number of 1 bits in `x`, also called "Hamming weight".
 template<typename T>
-constexpr auto popcnt(T x) noexcept -> unsigned
+[[nodiscard]] constexpr auto popcnt(T x) noexcept -> unsigned
 {
 	static_assert(std::is_unsigned_v<T>);
 #if defined(__cpp_lib_bitops)
@@ -40,7 +40,7 @@ constexpr auto popcnt(T x) noexcept -> unsigned
 // Chooses at most `count` 1 bits from `x`, starting from the most significant
 // bit.
 template<typename T>
-constexpr auto choosel(unsigned count, T x) noexcept -> T
+[[nodiscard]] constexpr auto choosel(unsigned count, T x) noexcept -> T
 {
 	static_assert(std::is_unsigned_v<T>);
 	T chosen = 0U;
@@ -58,7 +58,7 @@ constexpr auto choosel(unsigned count, T x) noexcept -> T
 // Chooses at most `count` 1 bits from `x`, starting from the least significant
 // bit.
 template<typename T>
-constexpr auto chooser(unsigned count, T x) noexcept -> T
+[[nodiscard]] constexpr auto chooser(unsigned count, T x) noexcept -> T
 {
 	static_assert(std::is_unsigned_v<T>);
 	T chosen = 0U;

@@ -44,30 +44,30 @@ struct PlaceLess
 	}
 };
 
-inline auto get_con(const Place& place) noexcept -> auto
+[[nodiscard]] inline auto get_con(const Place& place) noexcept -> auto
 {
 	return static_cast<YGOpen::Duel::Controller>(place.con());
 }
 
-inline auto get_loc(const Place& place) noexcept -> auto
+[[nodiscard]] inline auto get_loc(const Place& place) noexcept -> auto
 {
 	return static_cast<YGOpen::Duel::Location>(place.loc());
 }
 
 // See duel/constants/location.hpp `is_empty`.
-inline auto is_empty(const Place& place) noexcept -> bool
+[[nodiscard]] inline auto is_empty(const Place& place) noexcept -> bool
 {
 	return is_empty(get_loc(place));
 }
 
 // See duel/constants/location.hpp `is_pile`.
-inline auto is_pile(const Place& place) noexcept -> bool
+[[nodiscard]] inline auto is_pile(const Place& place) noexcept -> bool
 {
 	return is_pile(get_loc(place));
 }
 
 // See duel/constants/location.hpp `is_zone`.
-inline auto is_zone(const Place& place) noexcept -> bool
+[[nodiscard]] inline auto is_zone(const Place& place) noexcept -> bool
 {
 	return is_zone(get_loc(place));
 }

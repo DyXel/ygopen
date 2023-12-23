@@ -27,20 +27,20 @@ enum Location : uint32_t
 };
 
 // Check if Location loc is unspecified.
-constexpr auto is_empty(Location loc) noexcept -> bool
+[[nodiscard]] constexpr auto is_empty(Location loc) noexcept -> bool
 {
 	return loc == LOCATION_UNSPECIFIED;
 }
 
 // Check if Location loc corresponds to a pile.
-constexpr auto is_pile(Location loc) noexcept -> bool
+[[nodiscard]] constexpr auto is_pile(Location loc) noexcept -> bool
 {
 	return (loc & (LOCATION_MAIN_DECK | LOCATION_HAND | LOCATION_GRAVEYARD |
 	               LOCATION_BANISHED | LOCATION_EXTRA_DECK)) != 0U;
 }
 
 // Check if Location loc corresponds to zone.
-constexpr auto is_zone(Location loc) noexcept -> bool
+[[nodiscard]] constexpr auto is_zone(Location loc) noexcept -> bool
 {
 	return (loc &
 	        (LOCATION_MONSTER_ZONE | LOCATION_SPELL_ZONE | LOCATION_FIELD_ZONE |
