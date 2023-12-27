@@ -34,6 +34,8 @@ message Deck
 	string title            = 3; // Deck title.
 	string banlist_id       = 4; // Banlist ID where the deck should be used.
 	string notes            = 5; // Deck notes (guide, combos, etc.).
+
+	bool is_valid = 6; // FIXME: remove later.
 }
 
 message DeckLimits
@@ -41,7 +43,7 @@ message DeckLimits
 	message Limit
 	{
 		uint32 min = 1;
-		// NOTE: A negative number should be a implementation defined limit.
+		// NOTE: A negative number should be a implementation-defined limit.
 		int32 max = 2;
 	}
 	Limit main  = 1;

@@ -38,6 +38,7 @@ ygopen_unit_tests_src = files(
 	'test/deck.cpp',
 	'test/frame.cpp',
 	'test/place.cpp',
+	'test/room.cpp',
 	'test/sequential_wrapper.cpp',
 	'test/value_wrappers.cpp',
 )

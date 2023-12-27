@@ -1,3 +1,8 @@
+/*
+ * Copyright (c) 2024, Dylam De La Torre <dyxel04@gmail.com>
+ *
+ * SPDX-License-Identifier: AGPL-3.0-or-later
+ */
 #ifndef YGOPEN_DETAIL_CONFIG_HPP
 #define YGOPEN_DETAIL_CONFIG_HPP
 
@@ -6,5 +11,16 @@
 #else
 #define YGOPEN_UNREACHABLE() __builtin_unreachable()
 #endif // _MSC_VER
+
+#if !defined(YGOPEN_HAS_CONCEPTS)
+#if !defined(YGOPEN_DISABLE_CONCEPTS)
+#if defined(__cpp_concepts)
+#define YGOPEN_HAS_CONCEPTS 1
+#define YGOPEN_CONCEPT(x) x
+#else
+#define YGOPEN_CONCEPT(x) typename
+#endif // defined(__cpp_concepts)
+#endif // !defined(YGOPEN_DISABLE_CONCEPTS)
+#endif // !defined(YGOPEN_HAS_CONCEPTS)
 
 #endif // YGOPEN_DETAIL_CONFIG_HPP
