@@ -63,7 +63,7 @@ template<typename T>
 	static_assert(std::is_unsigned_v<T>);
 	T chosen = 0U;
 	unsigned i = 0;
-	while(i <= std::numeric_limits<T>::digits && popcnt(chosen) < count)
+	while(i < std::numeric_limits<T>::digits && popcnt(chosen) < count)
 	{
 		chosen |= x & (1U << i);
 		i++;
