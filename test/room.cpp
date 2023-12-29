@@ -19,8 +19,6 @@ using EvRef = Ev const&;
 using EvCase = Ev::TCase;
 using EvConfCase = Ev::Configuring::TCase;
 
-// auto wrap(Client& clients...) -> clients... // TODO
-
 using Sig = YGOpen::Server::RoomSignal;
 
 class Client
@@ -70,6 +68,25 @@ private:
 	std::vector<Ev> events_received_;
 	std::vector<Expectation> expectations_;
 };
+
+template<typename... Cs>
+[[nodiscard]] auto wrap(Cs&... clients)
+{
+	class Clients
+	{
+	public:
+		Clients(Cs&... clients) : clients_(clients...) {}
+
+		auto expect(Client::Expectation f) noexcept -> void
+		{
+			std::apply([f](Cs&... cs) { (cs.expect(f), ...); }, clients_);
+		}
+
+	private:
+		std::tuple<Cs&...> clients_;
+	};
+	return Clients(clients...);
+}
 
 class DeckValidator
 {
@@ -165,18 +182,17 @@ TEST(ServerRoom, ConfiguringStateJoining1V1Works)
 			EXPECT_EQ(d.user().name(), "Client1");
 			EXPECT_TRUE(d.is_host());
 		});
-	auto exp = [](EvRef e)
-	{
-		ASSERT_TRUE(e.has_configuring());
-		ASSERT_TRUE(e.configuring().has_duelist_enters());
-		auto& de = e.configuring().duelist_enters();
-		EXPECT_EQ(de.team(), 1);
-		EXPECT_EQ(de.pos(), 0);
-		EXPECT_EQ(de.user().name(), "Client2");
-		EXPECT_FALSE(de.is_host());
-	};
-	c2.expect(exp);
-	c1.expect(exp);
+	wrap(c1, c2).expect(
+		[](EvRef e)
+		{
+			ASSERT_TRUE(e.has_configuring());
+			ASSERT_TRUE(e.configuring().has_duelist_enters());
+			auto& de = e.configuring().duelist_enters();
+			EXPECT_EQ(de.team(), 1);
+			EXPECT_EQ(de.pos(), 0);
+			EXPECT_EQ(de.user().name(), "Client2");
+			EXPECT_FALSE(de.is_host());
+		});
 	room.enter(c2);
 }
 
@@ -280,26 +296,23 @@ TEST(ServerRoom, ConfiguringStateJoiningFullWorks)
 	room.enter(c2);
 	Client c3("Client3");
 	c3.expect(EvConfCase::kEnteringState);
-	auto exp1 = [](EvRef e)
-	{
-		ASSERT_TRUE(e.has_spectator_count());
-		ASSERT_EQ(e.spectator_count(), 1);
-	};
-	c1.expect(exp1);
-	c2.expect(exp1);
-	c3.expect(exp1);
+	wrap(c1, c2, c3)
+		.expect(
+			[](EvRef e)
+			{
+				ASSERT_TRUE(e.has_spectator_count());
+				ASSERT_EQ(e.spectator_count(), 1);
+			});
 	room.enter(c3);
 	Client c4("Client4");
 	c4.expect(EvConfCase::kEnteringState);
-	auto exp2 = [](EvRef e)
-	{
-		ASSERT_TRUE(e.has_spectator_count());
-		ASSERT_EQ(e.spectator_count(), 2);
-	};
-	c1.expect(exp2);
-	c2.expect(exp2);
-	c3.expect(exp2);
-	c4.expect(exp2);
+	wrap(c1, c2, c3, c4)
+		.expect(
+			[](EvRef e)
+			{
+				ASSERT_TRUE(e.has_spectator_count());
+				ASSERT_EQ(e.spectator_count(), 2);
+			});
 	room.enter(c4);
 }
 
@@ -413,17 +426,16 @@ TEST(ServerRoom, ConfiguringNonHostReadyingWorks)
 	room.visit(c2, s1);
 	c2.expect(EvConfCase::kDeckStatus);
 	room.visit(c2, s2);
-	auto exp = [](EvRef e)
-	{
-		ASSERT_TRUE(e.has_configuring());
-		ASSERT_TRUE(e.configuring().has_update_duelist());
-		auto& ud = e.configuring().update_duelist();
-		EXPECT_TRUE(ud.has_user());
-		EXPECT_EQ(ud.user().name(), "Client2");
-		EXPECT_TRUE(ud.is_ready());
-	};
-	c1.expect(exp);
-	c2.expect(exp);
+	wrap(c1, c2).expect(
+		[](EvRef e)
+		{
+			ASSERT_TRUE(e.has_configuring());
+			ASSERT_TRUE(e.configuring().has_update_duelist());
+			auto& ud = e.configuring().update_duelist();
+			EXPECT_TRUE(ud.has_user());
+			EXPECT_EQ(ud.user().name(), "Client2");
+			EXPECT_TRUE(ud.is_ready());
+		});
 }
 
 } // namespace
