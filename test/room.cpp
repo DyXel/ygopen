@@ -16,7 +16,8 @@ namespace
 using Ev = YGOpen::Server::RoomEvent;
 using EvRef = Ev const&;
 
-// using EvCase = YGOpen::Server::RoomEvent::Tcase; // TODO.
+using EvCase = Ev::TCase;
+using EvConfCase = Ev::Configuring::TCase;
 
 // auto wrap(Client& clients...) -> clients... // TODO
 
@@ -27,7 +28,7 @@ class Client
 public:
 	using Expectation = std::function<void(EvRef)>;
 
-	Client(std::string_view name = "Client") noexcept
+	Client(std::string_view name) noexcept
 	{
 		user_.set_name(name.data(), name.size());
 	}
@@ -38,9 +39,14 @@ public:
 
 	auto expect(Expectation f) noexcept -> void { expectations_.push_back(f); }
 
-	auto expect(decltype(std::ignore)) noexcept -> void
+	auto expect(EvConfCase ecc) noexcept -> void
 	{
-		expectations_.push_back([](EvRef) {});
+		expectations_.push_back(
+			[ecc](EvRef e)
+			{
+				ASSERT_EQ(e.t_case(), EvCase::kConfiguring);
+				ASSERT_EQ(e.configuring().t_case(), ecc);
+			});
 	}
 
 	~Client()
@@ -91,7 +97,7 @@ using TestRoom =
 
 TEST(ServerRoom, ConstructionWithHostWorks)
 {
-	Client c;
+	Client c("Client");
 	c.expect(
 		[](EvRef e)
 		{
@@ -114,7 +120,7 @@ TEST(ServerRoom, ConstructionWithHostWorks)
 
 TEST(ServerRoom, ConstructionOptionsClampingWorks)
 {
-	Client c;
+	Client c("Client");
 	YGOpen::Proto::Room::Options options;
 	options.add_max_duelists(99);
 	// NOTE: Only setting one on purpose, to test that the room fills the
@@ -130,7 +136,7 @@ TEST(ServerRoom, ConstructionOptionsClampingWorks)
 			EXPECT_EQ(opts.max_duelists(0), 3);
 			EXPECT_EQ(opts.max_duelists(1), 1);
 		});
-	c.expect(std::ignore);
+	c.expect(EvConfCase::kDuelistEnters);
 	auto room = TestRoom{dv, cdf, c, options};
 }
 
@@ -140,8 +146,8 @@ TEST(ServerRoom, ConfiguringStateJoining1V1Works)
 	options.add_max_duelists(1);
 	options.add_max_duelists(1);
 	Client c1("Client1");
-	c1.expect(std::ignore);
-	c1.expect(std::ignore);
+	c1.expect(EvConfCase::kEnteringState);
+	c1.expect(EvConfCase::kDuelistEnters);
 	auto room = TestRoom{dv, cdf, c1, options};
 	Client c2("Client2");
 	c2.expect(
@@ -180,8 +186,8 @@ TEST(ServerRoom, ConfiguringStateJoining3V3Works)
 	options.add_max_duelists(3);
 	options.add_max_duelists(3);
 	Client c1("Client1");
-	c1.expect(std::ignore);
-	c1.expect(std::ignore);
+	c1.expect(EvConfCase::kEnteringState);
+	c1.expect(EvConfCase::kDuelistEnters);
 	auto room = TestRoom{dv, cdf, c1, options};
 	int team = 1, pos = 0;
 	std::vector<Client> clients;
@@ -264,16 +270,16 @@ TEST(ServerRoom, ConfiguringStateJoiningFullWorks)
 	options.add_max_duelists(1);
 	options.add_max_duelists(1);
 	Client c1("Client1");
-	c1.expect(std::ignore);
-	c1.expect(std::ignore);
+	c1.expect(EvConfCase::kEnteringState);
+	c1.expect(EvConfCase::kDuelistEnters);
 	auto room = TestRoom{dv, cdf, c1, options};
-	c1.expect(std::ignore);
 	Client c2("Client2");
-	c2.expect(std::ignore);
-	c2.expect(std::ignore);
+	c2.expect(EvConfCase::kEnteringState);
+	c2.expect(EvConfCase::kDuelistEnters);
+	c1.expect(EvConfCase::kDuelistEnters);
 	room.enter(c2);
 	Client c3("Client3");
-	c3.expect(std::ignore);
+	c3.expect(EvConfCase::kEnteringState);
 	auto exp1 = [](EvRef e)
 	{
 		ASSERT_TRUE(e.has_spectator_count());
@@ -284,7 +290,7 @@ TEST(ServerRoom, ConfiguringStateJoiningFullWorks)
 	c3.expect(exp1);
 	room.enter(c3);
 	Client c4("Client4");
-	c4.expect(std::ignore);
+	c4.expect(EvConfCase::kEnteringState);
 	auto exp2 = [](EvRef e)
 	{
 		ASSERT_TRUE(e.has_spectator_count());
@@ -300,9 +306,9 @@ TEST(ServerRoom, ConfiguringStateJoiningFullWorks)
 TEST(ServerRoom, ConfiguringUpdatingInvalidDeckWorks)
 {
 	DeckValidator falsy_dv(false);
-	Client c;
-	c.expect(std::ignore);
-	c.expect(std::ignore);
+	Client c("Client");
+	c.expect(EvConfCase::kEnteringState);
+	c.expect(EvConfCase::kDuelistEnters);
 	auto room = TestRoom{falsy_dv, cdf, c, {}};
 	Sig s1;
 	s1.mutable_configuring()->mutable_update_deck();
@@ -318,9 +324,9 @@ TEST(ServerRoom, ConfiguringUpdatingInvalidDeckWorks)
 
 TEST(ServerRoom, ConfiguringUpdatingValidDeckWorks)
 {
-	Client c;
-	c.expect(std::ignore);
-	c.expect(std::ignore);
+	Client c("Client");
+	c.expect(EvConfCase::kEnteringState);
+	c.expect(EvConfCase::kDuelistEnters);
 	auto room = TestRoom{dv, cdf, c, {}};
 	Sig s1;
 	s1.mutable_configuring()->mutable_update_deck();
@@ -336,14 +342,14 @@ TEST(ServerRoom, ConfiguringUpdatingValidDeckWorks)
 
 TEST(ServerRoom, ConfiguringReadyingWithValidDeckWorks)
 {
-	Client c;
-	c.expect(std::ignore);
-	c.expect(std::ignore);
+	Client c("Client");
+	c.expect(EvConfCase::kEnteringState);
+	c.expect(EvConfCase::kDuelistEnters);
 	auto room = TestRoom{dv, cdf, c, {}};
 	Sig s1;
 	s1.mutable_configuring()->mutable_update_deck();
 	room.visit(c, s1);
-	c.expect(std::ignore);
+	c.expect(EvConfCase::kDeckStatus);
 	Sig s2;
 	// Becoming ready
 	s2.mutable_configuring()->set_ready_status(true);
@@ -374,19 +380,18 @@ TEST(ServerRoom, ConfiguringReadyingWithValidDeckWorks)
 TEST(ServerRoom, ConfiguringNonHostReadyingWorks)
 {
 	Client c1("Client1");
-	c1.expect(std::ignore);
-	c1.expect(std::ignore);
+	c1.expect(EvConfCase::kEnteringState);
+	c1.expect(EvConfCase::kDuelistEnters);
 	auto room = TestRoom{dv, cdf, c1, {}};
 	Sig s1;
 	s1.mutable_configuring()->mutable_update_deck();
 	room.visit(c1, s1);
-	c1.expect(std::ignore);
+	c1.expect(EvConfCase::kDeckStatus);
 	Sig s2;
 	s2.mutable_configuring()->set_ready_status(true);
 	room.visit(c1, s2);
-	c1.expect(std::ignore);
+	c1.expect(EvConfCase::kUpdateDuelist);
 	Client c2("Client2");
-	room.enter(c2);
 	c2.expect(
 		[](EvRef e)
 		{
@@ -402,10 +407,11 @@ TEST(ServerRoom, ConfiguringNonHostReadyingWorks)
 			EXPECT_EQ(d.user().name(), "Client1");
 			EXPECT_TRUE(d.is_ready());
 		});
-	c1.expect(std::ignore);
-	c2.expect(std::ignore);
+	c2.expect(EvConfCase::kDuelistEnters);
+	c1.expect(EvConfCase::kDuelistEnters);
+	room.enter(c2);
 	room.visit(c2, s1);
-	c2.expect(std::ignore);
+	c2.expect(EvConfCase::kDeckStatus);
 	room.visit(c2, s2);
 	auto exp = [](EvRef e)
 	{
