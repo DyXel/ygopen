@@ -34,8 +34,6 @@ message Deck
 	string title            = 3; // Deck title.
 	string banlist_id       = 4; // Banlist ID where the deck should be used.
 	string notes            = 5; // Deck notes (guide, combos, etc.).
-
-	bool is_valid = 6; // FIXME: remove later.
 }
 
 message DeckLimits

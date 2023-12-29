@@ -190,7 +190,48 @@ TEST(ServerRoom, ConfiguringStateJoining3V3Works)
 	{
 		auto const name = "Client" + std::to_string(i + 2);
 		auto& c = clients.emplace_back(name);
-		c.expect(std::ignore);
+		c.expect([dc = i + 1](EvRef e) { // dc == duelist_count
+			SCOPED_TRACE("with dc == " + std::to_string(dc));
+			ASSERT_TRUE(e.has_configuring());
+			ASSERT_TRUE(e.configuring().has_entering_state());
+			ASSERT_TRUE(e.configuring().entering_state().has_options());
+			auto& ds = e.configuring().entering_state().duelists();
+			ASSERT_EQ(ds.size(), dc);
+			// TODO: Unhardcode this...
+			std::vector<std::vector<std::pair<int, int>>> slots = {
+				// dc == 1
+				{{0, 0}},
+				// dc == 2
+				{{0, 0}, {1, 0}},
+				// dc == 3
+				{
+					{0, 0},
+					{0, 1},
+					{1, 0},
+				},
+				// dc == 4
+				{
+					{0, 0},
+					{0, 1},
+					{1, 0},
+					{1, 1},
+				},
+				// dc == 5
+				{
+					{0, 0},
+					{0, 1},
+					{0, 2},
+					{1, 0},
+					{1, 1},
+				}};
+			for(int j = 0; j < dc; j++)
+			{
+				auto& d = ds[j];
+				auto [t, p] = slots.at(dc - 1).at(j);
+				EXPECT_EQ(d.team(), t);
+				EXPECT_EQ(d.pos(), p);
+			}
+		});
 		auto duelist_enters_expect = [team, pos, name](EvRef e)
 		{
 			ASSERT_TRUE(e.has_configuring());

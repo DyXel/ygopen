@@ -63,9 +63,15 @@ public:
 		, host_(&host)
 		, teams_({})
 	{
-		for(auto& t : teams_)
-			for(auto* d : t)
-				assert(d == nullptr);
+		for(auto const& t : teams_)
+		{
+			for(auto& s : t)
+			{
+				assert(s.deck_valid == false);
+				assert(s.ready == false);
+				assert(s.client == nullptr);
+			}
+		}
 		clamp_options_();
 		enter_state_(RoomState::STATE_CONFIGURING);
 		enter(host);
@@ -82,48 +88,44 @@ public:
 
 	auto enter(Client& peer) noexcept -> void
 	{
-		struct Slot
-		{
-			uint8_t team = 0;
-			uint8_t pos = 0;
-		};
-		auto search_empty_duelist_slot = [&]() noexcept -> std::optional<Slot>
+		auto find_empty_duelist_slot = [&]() noexcept -> DuelistSearch
 		{
 			auto const& max_duelists = options_.max_duelists();
 			std::array<uint8_t, 2> duelist_count{0, 0};
 			std::array<int8_t, 2> first_empty_pos{-1, -1};
-			Slot slot;
+			DuelistSearch search;
 			for(auto const& t : teams_)
 			{
-				for(auto const* d : t)
+				for(auto& s : t)
 				{
-					if(d != nullptr)
-						duelist_count[slot.team]++;
-					else if(first_empty_pos[slot.team] < 0)
-						first_empty_pos[slot.team] = slot.pos;
-					if(++slot.pos == max_duelists[slot.team])
+					if(s.client != nullptr)
+						duelist_count[search.team]++;
+					else if(first_empty_pos[search.team] < 0)
+						first_empty_pos[search.team] = search.pos;
+					if(++search.pos == max_duelists[search.team])
 						break;
 				}
-				slot.team++;
-				slot.pos = 0;
+				search.team++;
+				search.pos = 0;
 			}
 			if(first_empty_pos[0] < 0 && first_empty_pos[1] < 0)
-				return std::nullopt;
+				return search;
 			if((duelist_count[0] <= duelist_count[1] &&
 			    !(first_empty_pos[0] < 0)) ||
 			   first_empty_pos[1] < 0)
 			{
 				assert(!(first_empty_pos[0] < 0));
-				slot.team = 0;
-				slot.pos = static_cast<uint8_t>(first_empty_pos[0]);
+				search.team = 0;
+				search.pos = static_cast<uint8_t>(first_empty_pos[0]);
 			}
 			else
 			{
 				assert(!(first_empty_pos[1] < 0));
-				slot.team = 1;
-				slot.pos = static_cast<uint8_t>(first_empty_pos[1]);
+				search.team = 1;
+				search.pos = static_cast<uint8_t>(first_empty_pos[1]);
 			}
-			return slot;
+			search.slot = &teams_[search.team][search.pos];
+			return search;
 		};
 		switch(state_)
 		{
@@ -133,36 +135,37 @@ public:
 			auto* es = e->mutable_configuring()->mutable_entering_state();
 			*es->mutable_options() = options_;
 			{
-				Slot slot;
+				uint8_t team = 0;
+				uint8_t pos = 0;
 				for(auto const& t : teams_)
 				{
-					for(auto const* d : t)
+					for(auto& s : t)
 					{
-						if(d != nullptr)
+						if(s.client != nullptr)
 						{
 							auto& duelist = *es->add_duelists();
-							duelist.set_team(slot.team);
-							duelist.set_pos(slot.pos);
-							d->fill_user(*duelist.mutable_user());
-							duelist.set_is_host(d == host_);
-							duelist.set_is_ready(
-								ready_statuses_[slot.team][slot.pos]);
+							duelist.set_team(team);
+							duelist.set_pos(pos);
+							s.client->fill_user(*duelist.mutable_user());
+							duelist.set_is_host(s.client == host_);
+							duelist.set_is_ready(s.ready);
 						}
-						slot.pos++;
+						pos++;
 					}
-					slot.team++;
+					team++;
+					pos = 0;
 				}
 			}
 			es->set_spectator_count(spectators_.size());
 			peer.send(*e);
-			auto const slot = search_empty_duelist_slot();
+			auto const search = find_empty_duelist_slot();
 			auto* e2 = event_();
-			if(slot.has_value())
+			if(search.slot != nullptr)
 			{
-				teams_[slot->team][slot->pos] = &peer;
+				search.slot->client = &peer;
 				auto* msg = e2->mutable_configuring()->mutable_duelist_enters();
-				msg->set_team(slot->team);
-				msg->set_pos(slot->pos);
+				msg->set_team(search.team);
+				msg->set_pos(search.pos);
 				peer.fill_user(*msg->mutable_user());
 				msg->set_is_host(host_ == &peer);
 				msg->set_is_ready(false);
@@ -191,27 +194,25 @@ public:
 	auto visit(Client& peer, RoomSignal const& signal) noexcept -> void
 	{
 		auto const& max_duelists = options_.max_duelists();
-		struct Slot
+		auto find_peer_duelist_slot = [&]() noexcept -> DuelistSearch
 		{
-			uint8_t team = 0;
-			uint8_t pos = 0;
-		};
-		auto search_peer_duelist_slot = [&]() noexcept -> std::optional<Slot>
-		{
-			Slot slot;
-			for(auto const& t : teams_)
+			DuelistSearch search;
+			for(auto& t : teams_)
 			{
-				for(auto const* d : t)
+				for(auto& s : t)
 				{
-					if(d == &peer)
-						return slot;
-					if(++slot.pos == max_duelists[slot.team])
+					if(s.client == &peer)
+					{
+						search.slot = &s;
+						return search;
+					}
+					if(++search.pos == max_duelists[search.team])
 						break;
 				}
-				slot.team++;
-				slot.pos = 0;
+				search.team++;
+				search.pos = 0;
 			}
-			return std::nullopt;
+			return search;
 		};
 		auto const signal_case = signal.t_case();
 		switch(state_)
@@ -225,8 +226,8 @@ public:
 			{
 			case RoomSignal::Configuring::kUpdateDeck:
 			{
-				auto const slot = search_peer_duelist_slot();
-				if(!slot.has_value())
+				auto const search = find_peer_duelist_slot();
+				if(search.slot == nullptr)
 					break;
 				auto const& deck = s.update_deck();
 				auto* e = event_();
@@ -236,32 +237,35 @@ public:
 				if(deck_validator_->check(options_.banlist_id(), deck, *de))
 				{
 					ds->clear_deck_error();
-					auto& stored_deck = duelist_decks_[slot->team][slot->pos];
-					stored_deck = deck;
-					stored_deck.set_is_valid(true);
+					search.slot->deck = deck;
+					search.slot->deck_valid = true;
 				}
 				else
 				{
-					duelist_decks_[slot->team][slot->pos] = {};
+					search.slot->deck = {};
+					search.slot->deck_valid = false;
 				}
 				peer.send(*e);
 				break;
 			}
 			case RoomSignal::Configuring::kReadyStatus:
 			{
-				auto const slot = search_peer_duelist_slot();
-				if(!slot.has_value())
+				auto const search = find_peer_duelist_slot();
+				if(search.slot == nullptr)
 					break;
 				bool const new_status = s.ready_status();
-				auto& current_status = ready_statuses_[slot->team][slot->pos];
-				if(new_status == current_status)
+				if(new_status == search.slot->ready)
 					break;
-				// TODO: Check deck validation.
-				current_status = new_status;
+				if(new_status && !search.slot->deck_valid)
+				{
+					// TODO: Send message saying that you need a valid deck
+					// before readying up.
+				}
+				search.slot->ready = new_status;
 				auto* e = event_();
 				auto* msg = e->mutable_configuring()->mutable_update_duelist();
-				msg->set_team(slot->team);
-				msg->set_pos(slot->pos);
+				msg->set_team(search.team);
+				msg->set_pos(search.pos);
 				peer.fill_user(*msg->mutable_user());
 				msg->set_is_host(host_ == &peer);
 				msg->set_is_ready(new_status);
@@ -280,11 +284,25 @@ public:
 	}
 
 private:
-	template<typename T>
-	using Team = std::array<T, YGOpen::Proto::Room::MAX_DUELISTS_PER_TEAM>;
+	struct DuelistSlot
+	{
+		bool deck_valid : 1 = false;
+		bool ready : 1 = false;
+		Client* client = nullptr;
+		YGOpen::Proto::Deck deck;
+	};
 
-	template<typename T>
-	using Teams = std::array<Team<T>, 2>;
+	struct DuelistSearch
+	{
+		uint8_t team = 0;
+		uint8_t pos = 0;
+		DuelistSlot* slot = nullptr;
+	};
+
+	using Team =
+		std::array<DuelistSlot, YGOpen::Proto::Room::MAX_DUELISTS_PER_TEAM>;
+
+	using Teams = std::array<Team, 2>;
 
 	DeckValidator const* deck_validator_;
 	CoreDuelFactory const* core_duel_factory_;
@@ -292,16 +310,10 @@ private:
 	RoomState state_;
 
 	Client const* host_;
-	Teams<Client*> teams_;
+	Teams teams_;
 	std::set<Client*> spectators_;
 
 	google::protobuf::Arena arena_;
-
-	// Used by at least CONFIGURING and DUELING state.
-	Teams<YGOpen::Proto::Deck> duelist_decks_;
-
-	// CONFIGURING STATE'S STATE
-	Teams<bool> ready_statuses_;
 
 	auto event_() noexcept -> RoomEvent*
 	{
@@ -314,9 +326,9 @@ private:
 	{
 		assert(event.t_case() != 0);
 		assert(team < teams_.size());
-		for(auto* d : teams_[team])
-			if(d != nullptr)
-				d->send(event);
+		for(auto& s : teams_[team])
+			if(s.client != nullptr)
+				s.client->send(event);
 	}
 
 	auto send_spectators_(RoomEvent const& event) noexcept -> void
@@ -339,7 +351,7 @@ private:
 		auto& max_duelists = *options_.mutable_max_duelists();
 		max_duelists.Resize(teams_.size(), 1);
 		for(auto& v : max_duelists)
-			v = std::clamp<uint32_t>(v, 1, std::tuple_size_v<Team<Client*>>);
+			v = std::clamp<uint32_t>(v, 1, std::tuple_size_v<Team>);
 	}
 
 	auto exit_current_state_() noexcept -> void
@@ -366,7 +378,8 @@ private:
 			// TODO: If we came from matchmake case:
 			//         * Decide a new host.
 			//         * Re-check Client decks.
-			ready_statuses_ = {};
+
+			// TODO: Set all ready statuses to false.
 			auto* e = event_();
 			e->mutable_configuring()->mutable_entering_state();
 			send_all_(*e);
