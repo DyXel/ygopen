@@ -54,9 +54,8 @@ concept CoreDuelFactory = requires(T cdf)
 };
 #endif // YGOPEN_HAS_CONCEPTS
 
-template<YGOPEN_CONCEPT(Client) Client,
-         YGOPEN_CONCEPT(DeckValidator) DeckValidator,
-         YGOPEN_CONCEPT(CoreDuelFactory) CoreDuelFactory>
+template<YGOPEN_CONCEPT(Client), YGOPEN_CONCEPT(DeckValidator),
+         YGOPEN_CONCEPT(CoreDuelFactory)>
 class BasicRoom
 {
 public:
