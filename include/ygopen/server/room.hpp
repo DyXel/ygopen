@@ -20,9 +20,9 @@ using RoomState = YGOpen::Proto::Room::State;
 using RoomEvent = YGOpen::Proto::Room::Event;
 using RoomSignal = YGOpen::Proto::Room::Signal;
 
-template<typename Client, typename DeckValidator, typename CoreDuelFactory>
 #ifdef YGOPEN_HAS_CONCEPTS
-requires requires(Client& c, RoomEvent const& re, YGOpen::Proto::User& u)
+template<typename T>
+concept Client = requires(T c, RoomEvent const& re, YGOpen::Proto::User& u)
 {
 	{
 		c.send(re)
@@ -30,24 +30,33 @@ requires requires(Client& c, RoomEvent const& re, YGOpen::Proto::User& u)
 	{
 		std::as_const(c).fill_user(u)
 	} noexcept;
-}
-&&requires(DeckValidator const& dv, std::string_view banlist_id,
-           YGOpen::Proto::Deck const& d, YGOpen::Proto::DeckError& de)
+};
+
+template<typename T>
+concept DeckValidator =
+	requires(T dv, std::string_view banlist_id, YGOpen::Proto::Deck const& d,
+             YGOpen::Proto::DeckError& de)
 {
 	{
-		dv.check(banlist_id, d, de)
+		std::as_const(dv).check(banlist_id, d, de)
 	} noexcept -> std::same_as<bool>;
 	// { // TODO: Check custom banlist?
-	// 	dv.check(b, d, de)
+	// 	std::as_const(dv).check(b, d, de)
 	// } noexcept -> std::same_as<bool>;
-}
-&&requires(CoreDuelFactory const& cdf)
+};
+
+template<typename T>
+concept CoreDuelFactory = requires(T cdf)
 {
 	{
-		cdf.make_duel(/*TODO*/)
+		std::as_const(cdf).make_duel(/*TODO*/)
 	} noexcept /*-> TODO*/;
-}
+};
 #endif // YGOPEN_HAS_CONCEPTS
+
+template<YGOPEN_CONCEPT(Client) Client,
+         YGOPEN_CONCEPT(DeckValidator) DeckValidator,
+         YGOPEN_CONCEPT(CoreDuelFactory) CoreDuelFactory>
 class BasicRoom
 {
 public:
@@ -286,10 +295,14 @@ public:
 private:
 	struct DuelistSlot
 	{
-		bool deck_valid : 1 = false;
-		bool ready : 1 = false;
-		Client* client = nullptr;
+		bool deck_valid : 1;
+		bool ready : 1;
+		Client* client;
 		YGOpen::Proto::Deck deck;
+
+		constexpr DuelistSlot() noexcept
+			: deck_valid(false), ready(false), client(nullptr), deck()
+		{}
 	};
 
 	struct DuelistSearch
