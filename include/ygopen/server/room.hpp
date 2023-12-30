@@ -266,8 +266,8 @@ public:
 					break;
 				if(new_status && !search.slot->deck_valid)
 				{
-					// TODO: Send message saying that you need a valid deck
-					// before readying up.
+					// TODO: Report that you need a valid deck before readying.
+					break;
 				}
 				search.slot->ready = new_status;
 				auto* e = event_();
@@ -366,22 +366,9 @@ private:
 			v = std::clamp<uint32_t>(v, 1, std::tuple_size_v<Team>);
 	}
 
-	auto exit_current_state_() noexcept -> void
-	{
-		switch(state_)
-		{
-		case RoomState::STATE_HOSTING_CLOSING:
-			break;
-		case RoomState::State_INT_MIN_SENTINEL_DO_NOT_USE_:
-		case RoomState::State_INT_MAX_SENTINEL_DO_NOT_USE_:
-			YGOPEN_UNREACHABLE();
-		}
-	}
-
 	auto enter_state_(RoomState new_state) noexcept -> void
 	{
 		assert(state_ != new_state);
-		exit_current_state_();
 		state_ = new_state;
 		switch(state_)
 		{
