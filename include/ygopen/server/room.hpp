@@ -280,7 +280,66 @@ public:
 				send_all_(*e);
 				break;
 			}
+			case RoomSignal::Configuring::kStartDueling:
+			{
+				if(&peer != host_)
+					break;
+				auto const can_start = [&]() noexcept -> bool
+				{
+					for(auto const& t : teams_)
+					{
+						bool has_atleast_one_duelist = false;
+						for(auto& s : t)
+						{
+							if(s.client != nullptr)
+							{
+								has_atleast_one_duelist = true;
+								if(!s.deck_valid || !s.ready)
+									return false;
+							}
+						}
+						if(!has_atleast_one_duelist)
+							return false;
+					}
+					return true;
+				}();
+				if(!can_start)
+				{
+					// TODO: report?
+					break;
+				}
+				enter_state_(RoomState::STATE_DECIDING_FIRST_TURN);
+				break;
+			}
 			case RoomSignal::Configuring::T_NOT_SET:
+				break;
+			}
+			break;
+		}
+		case RoomState::STATE_DECIDING_FIRST_TURN:
+		{
+			if(signal_case != RoomSignal::kDecidingFirstTurn)
+				break;
+			auto const& s = signal.deciding_first_turn();
+			using FTDM = YGOpen::Proto::Room::FirstTurnDecideMethod;
+			switch(s.t_case())
+			{
+			case RoomSignal::DecidingFirstTurn::kTeamGoingFirst:
+			{
+				if(options_.ftdm() != FTDM::FTDM_HOST_CHOOSES || &peer != host_)
+					break;
+				auto const team_going_first = s.team_going_first();
+				if(team_going_first > 1)
+					break;
+				auto* e = event_();
+				auto* r = e->mutable_deciding_first_turn()->mutable_result();
+				r->set_team_going_first(team_going_first);
+				send_all_(*e);
+				// TODO: Save who is going first to the dueling state.
+				// enter_state_(RoomState::STATE_DUELING);
+				break;
+			}
+			case RoomSignal::DecidingFirstTurn::T_NOT_SET:
 				break;
 			}
 			break;
@@ -364,6 +423,8 @@ private:
 		max_duelists.Resize(teams_.size(), 1);
 		for(auto& v : max_duelists)
 			v = std::clamp<uint32_t>(v, 1, std::tuple_size_v<Team>);
+		using FTDM = YGOpen::Proto::Room::FirstTurnDecideMethod;
+		options_.set_ftdm(FTDM::FTDM_HOST_CHOOSES);
 	}
 
 	auto enter_state_(RoomState new_state) noexcept -> void
@@ -382,6 +443,29 @@ private:
 			auto* e = event_();
 			e->mutable_configuring()->mutable_entering_state();
 			send_all_(*e);
+			break;
+		}
+		case RoomState::STATE_DECIDING_FIRST_TURN:
+		{
+			auto* e = event_();
+			e->mutable_deciding_first_turn()->mutable_entering_state();
+			send_all_(*e);
+			using FTDM = YGOpen::Proto::Room::FirstTurnDecideMethod;
+			switch(options_.ftdm())
+			{
+			case FTDM::FTDM_HOST_CHOOSES:
+				// TODO: 10s timer?
+				break;
+			case FTDM::FTDM_RPS:
+				// TODO: Implement
+				// TODO: 10s timer?
+				break;
+			case FTDM::FTDM_DICE: // TODO: Roll dice w/ randomness
+			case FTDM::FTDM_COIN: // TODO: Toss coin w/ randomness
+			case FTDM::FirstTurnDecideMethod_INT_MIN_SENTINEL_DO_NOT_USE_:
+			case FTDM::FirstTurnDecideMethod_INT_MAX_SENTINEL_DO_NOT_USE_:
+				YGOPEN_UNREACHABLE();
+			}
 			break;
 		}
 		case RoomState::State_INT_MIN_SENTINEL_DO_NOT_USE_:

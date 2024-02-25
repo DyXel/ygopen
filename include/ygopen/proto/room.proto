@@ -22,6 +22,22 @@ enum State
 	// Main "Idle" state, where duelists can ready up and where the host can
 	// change settings among other things.
 	STATE_CONFIGURING = 1;
+	// State where team leaders can decide who goes first.
+	STATE_DECIDING_FIRST_TURN = 2;
+	// State during which duelists conduct a single duel.
+	STATE_DUELING = 3;
+}
+
+enum FirstTurnDecideMethod
+{
+	// Rock paper scissors, winner decides.
+	FTDM_RPS = 0;
+	// Each team rolls a six-sided die, higher roll wins.
+	FTDM_DICE = 1;
+	// A coin is tossed: Heads == team0 wins, Tails == team1 wins.
+	FTDM_COIN = 2;
+	// Room's host chooses which team goes first directly.
+	FTDM_HOST_CHOOSES = 3;
 }
 
 message Duelist
@@ -46,6 +62,8 @@ message Options
 		string banlist_id        = 3;
 		Banlist custom_banlist   = 4;
 	}
+
+	FirstTurnDecideMethod ftdm = 5;
 
 	// TODO: Duel options
 }
@@ -76,10 +94,57 @@ message Event
 		}
 	}
 
+	message DecidingFirstTurn
+	{
+		message EnteringState
+		{
+
+		}
+
+		message Result
+		{
+			message RPS {}  // TODO
+			message Dice {} // TODO
+			message Coin {} // TODO
+
+			// Either a team (0 or 1), any other value indicates a draw.
+			uint32 team_going_first = 1;
+
+			oneof t
+			{
+				RPS rps             = 2;
+				Dice dice           = 3;
+				Coin coin           = 4;
+			}
+		}
+
+		oneof t
+		{
+			EnteringState entering_state = 1;
+			bool decide_first_turn       = 2;
+			Result result                = 3;
+		}
+	}
+
+	message Dueling
+	{
+		message EnteringState
+		{
+			// TODO
+		}
+
+		oneof t
+		{
+			EnteringState entering_state = 1;
+		}
+	}
+
 	oneof t
 	{
-		Configuring configuring = 1;
-		uint32 spectator_count  = 2;
+		Configuring configuring               = 1;
+		DecidingFirstTurn deciding_first_turn = 2;
+		Dueling dueling                       = 3;
+		uint32 spectator_count                = 4;
 	}
 }
 
@@ -89,13 +154,24 @@ message Signal
 	{
 		oneof t
 		{
-			Deck update_deck  = 1;
-			bool ready_status = 2;
+			Deck update_deck   = 1;
+			bool ready_status  = 2;
+			bool start_dueling = 3;
+		}
+	}
+
+	message DecidingFirstTurn
+	{
+		oneof t
+		{
+			// TODO: RPS Choice
+			uint32 team_going_first = 1;
 		}
 	}
 
 	oneof t
 	{
-		Configuring configuring = 1;
+		Configuring configuring               = 1;
+		DecidingFirstTurn deciding_first_turn = 2;
 	}
 }

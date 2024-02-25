@@ -18,6 +18,7 @@ using EvRef = Ev const&;
 
 using EvCase = Ev::TCase;
 using EvConfCase = Ev::Configuring::TCase;
+using EvDFTCase = Ev::DecidingFirstTurn::TCase;
 
 using Sig = YGOpen::Server::RoomSignal;
 
@@ -37,13 +38,23 @@ public:
 
 	auto expect(Expectation f) noexcept -> void { expectations_.push_back(f); }
 
-	auto expect(EvConfCase ecc) noexcept -> void
+	auto expect(EvConfCase ec) noexcept -> void
 	{
 		expectations_.push_back(
-			[ecc](EvRef e)
+			[ec](EvRef e)
 			{
 				ASSERT_EQ(e.t_case(), EvCase::kConfiguring);
-				ASSERT_EQ(e.configuring().t_case(), ecc);
+				ASSERT_EQ(e.configuring().t_case(), ec);
+			});
+	}
+
+	auto expect(EvDFTCase ec) noexcept -> void
+	{
+		expectations_.push_back(
+			[ec](EvRef e)
+			{
+				ASSERT_EQ(e.t_case(), EvCase::kDecidingFirstTurn);
+				ASSERT_EQ(e.deciding_first_turn().t_case(), ec);
 			});
 	}
 
@@ -80,6 +91,16 @@ template<typename... Cs>
 		auto expect(Client::Expectation f) noexcept -> void
 		{
 			std::apply([f](Cs&... cs) { (cs.expect(f), ...); }, clients_);
+		}
+
+		auto expect(EvConfCase ec) noexcept -> void
+		{
+			std::apply([ec](Cs&... cs) { (cs.expect(ec), ...); }, clients_);
+		}
+
+		auto expect(EvDFTCase ec) noexcept -> void
+		{
+			std::apply([ec](Cs&... cs) { (cs.expect(ec), ...); }, clients_);
 		}
 
 	private:
@@ -152,6 +173,8 @@ TEST(ServerRoom, ConstructionOptionsClampingWorks)
 			EXPECT_EQ(opts.max_duelists_size(), 2);
 			EXPECT_EQ(opts.max_duelists(0), 3);
 			EXPECT_EQ(opts.max_duelists(1), 1);
+			using FTDM = YGOpen::Proto::Room::FirstTurnDecideMethod;
+			EXPECT_EQ(opts.ftdm(), FTDM::FTDM_HOST_CHOOSES);
 		});
 	c.expect(EvConfCase::kDuelistEnters);
 	auto room = TestRoom{dv, cdf, c, options};
@@ -420,8 +443,7 @@ TEST(ServerRoom, ConfiguringNonHostReadyingWorks)
 			EXPECT_EQ(d.user().name(), "Client1");
 			EXPECT_TRUE(d.is_ready());
 		});
-	c2.expect(EvConfCase::kDuelistEnters);
-	c1.expect(EvConfCase::kDuelistEnters);
+	wrap(c1, c2).expect(EvConfCase::kDuelistEnters);
 	room.enter(c2);
 	room.visit(c2, s1);
 	c2.expect(EvConfCase::kDeckStatus);
@@ -435,6 +457,90 @@ TEST(ServerRoom, ConfiguringNonHostReadyingWorks)
 			EXPECT_TRUE(ud.has_user());
 			EXPECT_EQ(ud.user().name(), "Client2");
 			EXPECT_TRUE(ud.is_ready());
+		});
+}
+
+TEST(ServerRoom, ConfiguringStartDuelWorks)
+{
+	Client c1("Client1");
+	c1.expect(EvConfCase::kEnteringState);
+	c1.expect(EvConfCase::kDuelistEnters);
+	auto room = TestRoom{dv, cdf, c1, {}};
+	Sig s1;
+	s1.mutable_configuring()->mutable_update_deck();
+	room.visit(c1, s1);
+	c1.expect(EvConfCase::kDeckStatus);
+	Sig s2;
+	s2.mutable_configuring()->set_ready_status(true);
+	room.visit(c1, s2);
+	c1.expect(EvConfCase::kUpdateDuelist);
+	Client c2("Client2");
+	c2.expect(EvConfCase::kEnteringState);
+	wrap(c1, c2).expect(EvConfCase::kDuelistEnters);
+	room.enter(c2);
+	room.visit(c2, s1);
+	c2.expect(EvConfCase::kDeckStatus);
+	room.visit(c2, s2);
+	wrap(c1, c2).expect(EvConfCase::kUpdateDuelist);
+	Sig s3;
+	s3.mutable_configuring()->set_start_dueling(true);
+	room.visit(c1, s3);
+	wrap(c1, c2).expect(EvDFTCase::kEnteringState);
+}
+
+class ServerRoomDecidingFirstTurn : public ::testing::Test
+{
+protected:
+	Client c1{"Client1"};
+	Client c2{"Client2"};
+	std::optional<TestRoom> room_opt;
+
+	auto SetUp() -> void override
+	{
+		s1_.mutable_configuring()->mutable_update_deck();
+		s2_.mutable_configuring()->set_ready_status(true);
+		s3_.mutable_configuring()->set_start_dueling(true);
+		c1.expect(EvConfCase::kEnteringState);
+		c1.expect(EvConfCase::kDuelistEnters);
+	}
+
+	auto emplace_room(YGOpen::Proto::Room::Options const& options)
+	{
+		room_opt.emplace(dv, cdf, c1, options);
+		auto& room = *room_opt;
+		c1.expect(EvConfCase::kDeckStatus);
+		room.visit(c1, s1_);
+		c1.expect(EvConfCase::kUpdateDuelist);
+		room.visit(c1, s2_);
+		c2.expect(EvConfCase::kEnteringState);
+		wrap(c1, c2).expect(EvConfCase::kDuelistEnters);
+		room.enter(c2);
+		c2.expect(EvConfCase::kDeckStatus);
+		room.visit(c2, s1_);
+		wrap(c1, c2).expect(EvConfCase::kUpdateDuelist);
+		room.visit(c2, s2_);
+		wrap(c1, c2).expect(EvDFTCase::kEnteringState);
+		room.visit(c1, s3_);
+	}
+
+private:
+	Sig s1_, s2_, s3_;
+};
+
+TEST_F(ServerRoomDecidingFirstTurn, HostDecidingWorks)
+{
+	emplace_room({});
+	auto& room = *room_opt;
+	Sig s;
+	s.mutable_deciding_first_turn()->set_team_going_first(1);
+	room.visit(c1, s);
+	wrap(c1, c2).expect(
+		[](EvRef e)
+		{
+			ASSERT_TRUE(e.has_deciding_first_turn());
+			ASSERT_TRUE(e.deciding_first_turn().has_result());
+			auto& r = e.deciding_first_turn().result();
+			EXPECT_EQ(r.team_going_first(), 1);
 		});
 }
 
