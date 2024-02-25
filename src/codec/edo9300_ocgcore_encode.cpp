@@ -74,8 +74,25 @@ constexpr auto log(Args&&... args) noexcept -> void
 
 #endif // YGOPEN_ENCODER_DEBUG
 
+template<typename... Args>
+constexpr auto skip(uint8_t const*& ptr, size_t bytes, Args&&... args) noexcept
+	-> void
+{
+	log("skipping ", bytes, " bytes. ", std::forward<Args>(args)...);
+	ptr += bytes; // NOLINT
+}
+
 template<typename T, typename... Args>
-constexpr auto read(uint8_t const*& ptr, Args&&... args) noexcept -> T
+constexpr auto skip(uint8_t const*& ptr, Args&&... args) noexcept -> void
+{
+	auto const bytes = sizeof(T);
+	log("skipping ", bytes, " bytes. ", std::forward<Args>(args)...);
+	ptr += bytes; // NOLINT
+}
+
+template<typename T, typename... Args>
+[[nodiscard]] constexpr auto read(uint8_t const*& ptr, Args&&... args) noexcept
+	-> T
 {
 	log(std::forward<Args>(args)...);
 	T value{};
@@ -84,55 +101,58 @@ constexpr auto read(uint8_t const*& ptr, Args&&... args) noexcept -> T
 	return value;
 }
 
-constexpr auto read_attribute(uint8_t const*& ptr) noexcept -> auto
+[[nodiscard]] constexpr auto read_attribute(uint8_t const*& ptr) noexcept
+	-> auto
 {
 	return read<uint32_t>(ptr, "attribute");
 }
 
 template<typename... Args>
-constexpr auto read_bool(uint8_t const*& ptr, Args&&... args) noexcept -> bool
+[[nodiscard]] constexpr auto read_bool(uint8_t const*& ptr,
+                                       Args&&... args) noexcept -> bool
 {
 	return read<uint8_t>(ptr, std::forward<Args>(args)...) != 0U;
 }
 
-constexpr auto read_con(uint8_t const*& ptr) noexcept -> auto
+[[nodiscard]] constexpr auto read_con(uint8_t const*& ptr) noexcept -> auto
 {
 	return static_cast<Duel::Controller>(read<CPlayer>(ptr, "player"));
 }
 
-constexpr auto read_link_arrow(uint8_t const*& ptr) noexcept -> auto
+[[nodiscard]] constexpr auto read_link_arrow(uint8_t const*& ptr) noexcept
+	-> auto
 {
 	return read<uint32_t>(ptr, "link arrow");
 }
 
 template<typename T = CLoc>
-constexpr auto read_loc(uint8_t const*& ptr) noexcept -> auto
+[[nodiscard]] constexpr auto read_loc(uint8_t const*& ptr) noexcept -> auto
 {
 	return static_cast<Duel::Location>(read<T>(ptr, "location"));
 }
 
 template<typename T = CPos>
-constexpr auto read_pos(uint8_t const*& ptr) noexcept -> auto
+[[nodiscard]] constexpr auto read_pos(uint8_t const*& ptr) noexcept -> auto
 {
 	return static_cast<uint32_t>(read<T>(ptr, "position"));
 }
 
-constexpr auto read_race(uint8_t const*& ptr) noexcept -> auto
+[[nodiscard]] constexpr auto read_race(uint8_t const*& ptr) noexcept -> auto
 {
 	return read<uint64_t>(ptr, "race");
 }
 
-constexpr auto read_reason(uint8_t const*& ptr) noexcept -> auto
+[[nodiscard]] constexpr auto read_reason(uint8_t const*& ptr) noexcept -> auto
 {
 	return static_cast<uint64_t>(read<uint32_t>(ptr, "reason"));
 }
 
-constexpr auto read_status(uint8_t const*& ptr) noexcept -> auto
+[[nodiscard]] constexpr auto read_status(uint8_t const*& ptr) noexcept -> auto
 {
 	return read<uint32_t>(ptr, "status");
 }
 
-constexpr auto read_type(uint8_t const*& ptr) noexcept -> auto
+[[nodiscard]] constexpr auto read_type(uint8_t const*& ptr) noexcept -> auto
 {
 	return read<uint32_t>(ptr, "type");
 }
@@ -154,7 +174,7 @@ inline auto read_effect(uint8_t const*& ptr,
 }
 
 template<typename Loc, typename Seq>
-constexpr auto fix_spell_loc_seq(Loc loc, Seq seq) noexcept
+[[nodiscard]] constexpr auto fix_spell_loc_seq(Loc loc, Seq seq) noexcept
 	-> std::pair<Loc, Seq>
 {
 	using namespace YGOpen::Duel;
@@ -217,7 +237,7 @@ auto read_card_list(uint8_t const*& ptr, Next next) noexcept -> void
 		log("reading card number ", static_cast<int>(i));
 		auto* place = next();
 		// Skip card code.
-		read<CCode>(ptr);
+		skip<CCode>(ptr, "card code");
 		// Location information.
 		read_loc_info<Loc, Seq, Pos>(ptr, *place);
 	}
@@ -234,20 +254,12 @@ auto read_card_list(uint8_t const*& ptr, Next next, Post post) noexcept -> void
 		log("reading card number ", static_cast<int>(i));
 		auto* place = next();
 		// Skip card code.
-		read<CCode>(ptr, "skipped card code");
+		skip<CCode>(ptr, "card code");
 		// Location information.
 		read_loc_info<Loc, Seq, Pos>(ptr, *place);
 		// Post read.
 		post(*place);
 	}
-}
-
-template<typename... Args>
-constexpr auto skip(uint8_t const*& ptr, size_t bytes, Args&&... args) noexcept
-	-> void
-{
-	log("skipping ", bytes, " bytes. ", std::forward<Args>(args)...);
-	ptr += bytes; // NOLINT
 }
 
 template<typename... Args>
@@ -491,7 +503,7 @@ auto encode_one(google::protobuf::Arena& arena, IEncodeContext& context,
 	auto add_summoning = [&](Reason reason)
 	{
 		auto* update = create_event()->mutable_meta()->mutable_update();
-		read<CCode>(data, "skipped card code");
+		skip<CCode>(data, "card code");
 		read_loc_info(data, *update->add_places());
 		update->set_reason(reason);
 	};
@@ -513,7 +525,7 @@ auto encode_one(google::protobuf::Arena& arena, IEncodeContext& context,
 	case MSG_CONFIRM_EXTRATOP:
 	{
 		auto* confirm = create_event()->mutable_meta()->mutable_confirm();
-		read_con(data);
+		skip<CPlayer>(data, "player");
 		read_card_list<CCount, CSLoc, CSeq, void>(
 			data, [&]() { return confirm->add_places(); });
 		break;
@@ -534,14 +546,14 @@ auto encode_one(google::protobuf::Arena& arena, IEncodeContext& context,
 		place->set_loc(LOCATION_HAND);
 		const auto count = read<CCount>(data, ".size()");
 		for(CCount i = 0; i < count; i++)
-			read<CCode>(data, "skipped card code ", static_cast<int>(i));
+			skip<CCode>(data, "card code ", static_cast<int>(i));
 		break;
 	}
 	case MSG_CONFIRM_CARDS:
 	{
 		// TODO: Specialize case where location is 0.
 		auto* confirm = create_event()->mutable_meta()->mutable_confirm();
-		read<CPlayer>(data, "skipped player");
+		skip<CPlayer>(data, "player");
 		read_card_list<CCount, CSLoc, CSeq, void>(
 			data, [&]() { return confirm->add_places(); });
 		break;
@@ -549,7 +561,7 @@ auto encode_one(google::protobuf::Arena& arena, IEncodeContext& context,
 	case MSG_SHUFFLE_SET_CARD:
 	{
 		auto* shuffle = create_event()->mutable_card()->mutable_shuffle();
-		read<CSLoc>(data, "location");
+		skip<CSLoc>(data, "location");
 		auto const count = read<CSCount>(data, ".size()");
 		for(CSCount i = 0; i < count; i++)
 			read_loc_info(data, *shuffle->add_previous_places());
@@ -565,7 +577,7 @@ auto encode_one(google::protobuf::Arena& arena, IEncodeContext& context,
 		place->set_loc(LOCATION_EXTRA_DECK);
 		auto const count = read<CCount>(data, ".size()");
 		for(CCount i = 0; i < count; i++)
-			read<CCode>(data, "skipped card code ", static_cast<int>(i));
+			skip<CCode>(data, "card code ", static_cast<int>(i));
 		break;
 	}
 	case MSG_NEW_TURN:
@@ -582,27 +594,27 @@ auto encode_one(google::protobuf::Arena& arena, IEncodeContext& context,
 	case MSG_POS_CHANGE:
 	{
 		auto* update = create_event()->mutable_meta()->mutable_update();
-		read<CCode>(data, "skipped card code");
+		skip<CCode>(data, "card code");
 		read_loc_info<CSLoc, CSSeq, void>(data, *update->add_places());
-		read<CSPos>(data, "skipped position (previous)");
-		read<CSPos>(data, "skipped position (current)");
+		skip<CSPos>(data, "position (previous)");
+		skip<CSPos>(data, "position (current)");
 		break;
 	}
 	case MSG_SET:
 	{
 		auto* update = create_event()->mutable_meta()->mutable_update();
-		read<CCode>(data, "skipped card code");
+		skip<CCode>(data, "card code");
 		read_loc_info<CSLoc, CSeq, void>(data, *update->add_places());
-		read<CPos>(data, "skipped position (current)");
+		skip<CPos>(data, "position (current)");
 		break;
 	}
 	case MSG_SWAP:
 	{
 		auto* op =
 			create_event()->mutable_card()->mutable_exchange()->add_ops();
-		read<CCode>(data, "skipped card code");
+		skip<CCode>(data, "card code");
 		read_loc_info(data, *op->mutable_place_a());
-		read<CCode>(data, "skipped card code");
+		skip<CCode>(data, "card code");
 		read_loc_info(data, *op->mutable_place_b());
 		break;
 	}
@@ -631,11 +643,11 @@ auto encode_one(google::protobuf::Arena& arena, IEncodeContext& context,
 	case MSG_CHAINING:
 	{
 		auto* push = create_event()->mutable_chain_stack()->mutable_push();
-		read<CCode>(data, "skipped card code");
+		skip<CCode>(data, "card code");
 		read_loc_info(data, *push->mutable_card_place());
 		read_loc_info<CSLoc, CSeq, void>(data, *push->mutable_place());
 		read_effect(data, *push->mutable_effect());
-		read<uint32_t>(data, "chain num");
+		skip<uint32_t>(data, "chain num");
 		break;
 	}
 	case MSG_CHAINED:
@@ -653,12 +665,12 @@ auto encode_one(google::protobuf::Arena& arena, IEncodeContext& context,
 		};
 		auto* meta = create_event()->mutable_meta();
 		meta->set_chain_status(MAP[core_msg - MSG_CHAINED]);
-		read<uint8_t>(data, "chain num");
+		skip<uint8_t>(data, "chain num");
 		break;
 	}
 	case MSG_CHAIN_SOLVED:
 	{
-		read<uint8_t>(data, "chain num");
+		skip<uint8_t>(data, "chain num");
 		create_event()->mutable_chain_stack()->set_pop(true);
 		break;
 	}
@@ -693,7 +705,7 @@ auto encode_one(google::protobuf::Arena& arena, IEncodeContext& context,
 #undef LP
 	case MSG_RANDOM_SELECTED:
 	{
-		read<CPlayer>(data, "skipped player");
+		skip<CPlayer>(data, "player");
 		add_selected();
 		break;
 	}
@@ -715,9 +727,9 @@ auto encode_one(google::protobuf::Arena& arena, IEncodeContext& context,
 	case MSG_REMOVE_COUNTER:
 	{
 		auto* update = create_event()->mutable_meta()->mutable_update();
-		read<uint16_t>(data, "skipped counter type info");
+		skip<uint16_t>(data, "counter type info");
 		read_loc_info<CSLoc, CSSeq, void>(data, *update->add_places());
-		read<uint16_t>(data, "skipped counter count info");
+		skip<uint16_t>(data, "counter count info");
 		break;
 	}
 	case MSG_ATTACK:
@@ -767,7 +779,7 @@ auto encode_one(google::protobuf::Arena& arena, IEncodeContext& context,
 	{
 		auto* state = create_event()->mutable_board()->mutable_state();
 		auto* resize = state->mutable_resize();
-		read<uint8_t>(data, "compatibility padding (duel_rule)");
+		skip<uint8_t>(data, "compatibility padding (duel_rule)");
 		state->set_core_flags(0U);
 		state->set_turn_counter(0);
 		for(int i = 0; i < 2; i++)
@@ -807,16 +819,16 @@ auto encode_one(google::protobuf::Arena& arena, IEncodeContext& context,
 		};
 		const auto main_size = read<CCount>(data, "main");
 		const auto extra_size = read<CCount>(data, "extra");
-		read<CCount>(data, "skipped extra_p_count");
+		skip<CCount>(data, "extra_p_count");
 		const auto hand_size = read<CCount>(data, "hand");
 		add_pile(LOCATION_MAIN_DECK, main_size);
 		add_pile(LOCATION_EXTRA_DECK, extra_size);
 		add_pile(LOCATION_HAND, hand_size);
-		read<CCode>(data, "skipped deck_reversed card code");
+		skip<CCode>(data, "deck_reversed card code");
 		for(size_t i = 0U; i < (extra_size + hand_size); i++)
 		{
-			read<CCode>(data, "skipped card code");
-			read<CPos>(data, "skipped position (current)");
+			skip<CCode>(data, "card code ", static_cast<int>(i));
+			skip<CPos>(data, "position (current)");
 		}
 		break;
 	}
@@ -843,7 +855,7 @@ auto encode_one(google::protobuf::Arena& arena, IEncodeContext& context,
 				{
 					if(read<uint8_t>(data, "has card") == 0U)
 						continue;
-					read<CSPos>(data, "skipped position (current)");
+					skip<CSPos>(data, "position (current)");
 					add_one(loc, seq, OSEQ_INVALID);
 					const auto mats = read<CCount>(data, "xyz mats count");
 					for(CCount oseq = 0U; oseq < mats; oseq++)
@@ -869,7 +881,7 @@ auto encode_one(google::protobuf::Arena& arena, IEncodeContext& context,
 			add_pile(LOCATION_GRAVEYARD, read<CCount>(data, "graveyard"));
 			add_pile(LOCATION_BANISHED, read<CCount>(data, "banished"));
 			add_pile(LOCATION_EXTRA_DECK, read<CCount>(data, "extra"));
-			read<CCount>(data, "skipped extra_p_count");
+			skip<CCount>(data, "extra_p_count");
 		};
 		read_controller_state(CONTROLLER_0);
 		read_controller_state(CONTROLLER_1);
@@ -877,7 +889,7 @@ auto encode_one(google::protobuf::Arena& arena, IEncodeContext& context,
 		for(CCount i = 0U; i < chain_count; i++)
 		{
 			auto* chain = state->add_chains();
-			read<CCode>(data, "skipped card code");
+			skip<CCode>(data, "card code");
 			read_loc_info(data, *chain->mutable_card_place());
 			read_loc_info<CSLoc, CSeq, void>(data, *chain->mutable_place());
 			read_effect(data, *chain->mutable_effect());
@@ -1092,7 +1104,7 @@ auto encode_one(google::protobuf::Arena& arena, IEncodeContext& context,
 			for(CCount i = 0; i < count; i++)
 			{
 				auto& card = *select_idle->add_activable_cards();
-				read<CCode>(data, "skipped card code");
+				skip<CCode>(data, "card code ", static_cast<int>(i));
 				read_loc_info<CSLoc, CSeq, void>(data, *card.mutable_place());
 				read_effect(data, *card.mutable_effect());
 				skip(data, 1U, "normal_resolve_reset");
@@ -1103,7 +1115,7 @@ auto encode_one(google::protobuf::Arena& arena, IEncodeContext& context,
 			for(CCount i = 0; i < count; i++)
 			{
 				auto& card = *select_idle->add_can_attack_cards();
-				read<CCode>(data, "skipped card code");
+				skip<CCode>(data, "card code ", static_cast<int>(i));
 				read_loc_info<CSLoc, CSSeq, void>(data, *card.mutable_place());
 				card.set_can_attack_directly(read_bool(data));
 			}
@@ -1126,7 +1138,7 @@ auto encode_one(google::protobuf::Arena& arena, IEncodeContext& context,
 			for(CCount i = 0; i < count; i++)
 			{
 				auto& place = *select_idle->add_summonable_cards();
-				read<CCode>(data, "skipped card code");
+				skip<CCode>(data, "card code ", static_cast<int>(i));
 				read_loc_info<CSLoc, CSeq, void>(data, place);
 			}
 		}
@@ -1135,7 +1147,7 @@ auto encode_one(google::protobuf::Arena& arena, IEncodeContext& context,
 			for(CCount i = 0; i < count; i++)
 			{
 				auto& place = *select_idle->add_spsummonable_cards();
-				read<CCode>(data, "skipped card code");
+				skip<CCode>(data, "card code ", static_cast<int>(i));
 				read_loc_info<CSLoc, CSeq, void>(data, place);
 			}
 		}
@@ -1144,7 +1156,7 @@ auto encode_one(google::protobuf::Arena& arena, IEncodeContext& context,
 			for(CCount i = 0; i < count; i++)
 			{
 				auto& place = *select_idle->add_repositionable_cards();
-				read<CCode>(data, "skipped card code");
+				skip<CCode>(data, "card code ", static_cast<int>(i));
 				read_loc_info<CSLoc, CSSeq, void>(data, place);
 			}
 		}
@@ -1153,7 +1165,7 @@ auto encode_one(google::protobuf::Arena& arena, IEncodeContext& context,
 			for(CCount i = 0; i < count; i++)
 			{
 				auto& place = *select_idle->add_msetable_cards();
-				read<CCode>(data, "skipped card code");
+				skip<CCode>(data, "card code ", static_cast<int>(i));
 				read_loc_info<CSLoc, CSeq, void>(data, place);
 			}
 		}
@@ -1162,7 +1174,7 @@ auto encode_one(google::protobuf::Arena& arena, IEncodeContext& context,
 			for(CCount i = 0; i < count; i++)
 			{
 				auto& place = *select_idle->add_ssetable_cards();
-				read<CCode>(data, "skipped card code");
+				skip<CCode>(data, "card code ", static_cast<int>(i));
 				read_loc_info<CSLoc, CSeq, void>(data, place);
 			}
 		}
@@ -1171,7 +1183,7 @@ auto encode_one(google::protobuf::Arena& arena, IEncodeContext& context,
 			for(CCount i = 0; i < count; i++)
 			{
 				auto& card = *select_idle->add_activable_cards();
-				read<CCode>(data, "skipped card code");
+				skip<CCode>(data, "card code ", static_cast<int>(i));
 				read_loc_info<CSLoc, CSeq, void>(data, *card.mutable_place());
 				read_effect(data, *card.mutable_effect());
 				skip(data, 1U, "normal_resolve_reset");
@@ -1227,7 +1239,7 @@ auto encode_one(google::protobuf::Arena& arena, IEncodeContext& context,
 			for(CCount i = 0; i < count; i++)
 			{
 				auto& card = *select_to_chain->add_activable_cards();
-				read<CCode>(data, "skipped card code");
+				skip<CCode>(data, "card code ", static_cast<int>(i));
 				read_loc_info(data, *card.mutable_place());
 				read_effect(data, *card.mutable_effect());
 				skip(data, 1U, "normal_resolve_reset");
@@ -1294,9 +1306,9 @@ auto encode_one(google::protobuf::Arena& arena, IEncodeContext& context,
 		// smaller messages, also, in the case of select hints, the info should
 		// be appended directly to the respective request message, instead.
 		// TODO: properly handle this.
-		read<uint8_t>(data, "skipped hint type");
-		read_con(data);
-		read<uint64_t>(data, "skipped hint data");
+		skip<uint8_t>(data, "hint type");
+		skip<CPlayer>(data, "player");
+		skip<uint64_t>(data, "hint data");
 		result.state = EncodeOneResult::State::SWALLOWED;
 		// 	result.state = EncodeOneResult::State::OK;
 		break;
@@ -1311,8 +1323,8 @@ auto encode_one(google::protobuf::Arena& arena, IEncodeContext& context,
 		auto const size = context.pile_size(get_con(*place), get_loc(*place));
 		place->set_seq(size - 1U - read<CSeq>(data, "sequence"));
 		place->set_oseq(OSEQ_INVALID);
-		read<CCode>(data, "skipped card code");
-		read<CPos>(data, "skipped position (current)");
+		skip<CCode>(data, "card code");
+		skip<CPos>(data, "position (current)");
 		result.state = EncodeOneResult::State::OK;
 		break;
 	}
@@ -1330,7 +1342,7 @@ auto encode_one(google::protobuf::Arena& arena, IEncodeContext& context,
 		// those back and forth with the actual card who "owns them".
 		Place prev{};
 		Place curr{};
-		read<CCode>(data, "skipped card code");
+		skip<CCode>(data, "card code");
 		read_loc_info(data, prev);
 		read_loc_info(data, curr);
 		auto const reason = read_reason(data);
@@ -1518,8 +1530,8 @@ auto encode_one(google::protobuf::Arena& arena, IEncodeContext& context,
 		auto const count = read<CCount>(data, "number of draws");
 		for(CCount i = 0; i < count; i++)
 		{
-			read<CCode>(data, "skipped card code");
-			read<CPos>(data, "skipped position (current)");
+			skip<CCode>(data, "card code ", static_cast<int>(i));
+			skip<CPos>(data, "position (current)");
 		}
 		auto* pile = create_event()->mutable_pile();
 		pile->set_reason(REASON_DRAW);
@@ -1596,8 +1608,8 @@ auto encode_one(google::protobuf::Arena& arena, IEncodeContext& context,
 			CARD_HINT_TYPE_DESC_REMOVE = 7U,
 		};
 		data += CORE_LOC_INFO_SIZE;
-		/*auto type = */ read<CardHintType>(data, "card hint type");
-		/*auto value = */ read<uint64_t>(data, "card hint value");
+		skip<CardHintType>(data, "card hint type");
+		skip<uint64_t>(data, "card hint value");
 		result.state = EncodeOneResult::State::SWALLOWED;
 		break;
 	}
@@ -1656,7 +1668,7 @@ auto encode_one(google::protobuf::Arena& arena, IEncodeContext& context,
 		set_state_swallowed();
 		// TODO: Improve message in the core.
 		skip(data, CORE_LOC_INFO_SIZE, "who missed");
-		read<CCode>(data, "skipped card code");
+		skip<CCode>(data, "card code");
 		break;
 	}
 	case MSG_AI_NAME:
