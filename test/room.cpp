@@ -141,8 +141,14 @@ public:
 	auto make_duel(/*TODO*/) const noexcept -> void {}
 } const cdf;
 
-using TestRoom =
-	YGOpen::Server::BasicRoom<Client, DeckValidator, CoreDuelFactory>;
+struct TestRoomTraits
+{
+	using ClientType = Client;
+	using DeckValidatorType = DeckValidator;
+	using CoreDuelFactoryType = CoreDuelFactory;
+};
+
+using TestRoom = YGOpen::Server::BasicRoom<TestRoomTraits>;
 
 TEST(ServerRoom, ConstructionWithHostWorks)
 {

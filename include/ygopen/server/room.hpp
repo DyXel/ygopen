@@ -53,17 +53,28 @@ concept CoreDuelFactory = requires(T cdf)
 		std::as_const(cdf).make_duel(/*TODO*/)
 	} noexcept /*-> TODO*/;
 };
+
+template<typename T>
+concept RoomTraits = requires(T)
+{
+	requires Client<typename T::ClientType>;
+	requires DeckValidator<typename T::DeckValidatorType>;
+	requires CoreDuelFactory<typename T::CoreDuelFactoryType>;
+};
 #endif // YGOPEN_HAS_CONCEPTS
 
-template<YGOPEN_CONCEPT(Client), YGOPEN_CONCEPT(DeckValidator),
-         YGOPEN_CONCEPT(CoreDuelFactory)>
+template<YGOPEN_CONCEPT(RoomTraits)>
 class BasicRoom
 {
 public:
 	class InternalSignal;
 
-	BasicRoom(DeckValidator const& deck_validator,
-	          CoreDuelFactory const& core_duel_factory, Client& host,
+	using DeckValidatorType = typename RoomTraits::DeckValidatorType;
+	using CoreDuelFactoryType = typename RoomTraits::CoreDuelFactoryType;
+	using ClientType = typename RoomTraits::ClientType;
+
+	BasicRoom(DeckValidatorType const& deck_validator,
+	          CoreDuelFactoryType const& core_duel_factory, ClientType& host,
 	          YGOpen::Proto::Room::Options options) noexcept
 		: deck_validator_(&deck_validator)
 		, core_duel_factory_(&core_duel_factory)
@@ -95,7 +106,7 @@ public:
 	auto operator=(BasicRoom const&) -> BasicRoom& = delete;
 	auto operator=(BasicRoom&&) -> BasicRoom& = delete;
 
-	auto enter(Client& peer) noexcept -> void
+	auto enter(ClientType& peer) noexcept -> void
 	{
 		auto find_empty_duelist_slot = [&]() noexcept -> DuelistSearch
 		{
@@ -200,7 +211,7 @@ public:
 
 	auto visit(InternalSignal const& signal) noexcept -> void;
 
-	auto visit(Client& peer, RoomSignal const& signal) noexcept -> void
+	auto visit(ClientType& peer, RoomSignal const& signal) noexcept -> void
 	{
 		auto const& max_duelists = options_.max_duelists();
 		auto find_peer_duelist_slot = [&]() noexcept -> DuelistSearch
@@ -356,7 +367,7 @@ private:
 	{
 		bool deck_valid : 1;
 		bool ready : 1;
-		Client* client;
+		ClientType* client;
 		YGOpen::Proto::Deck deck;
 
 		constexpr DuelistSlot() noexcept
@@ -376,14 +387,14 @@ private:
 
 	using Teams = std::array<Team, 2>;
 
-	DeckValidator const* deck_validator_;
-	CoreDuelFactory const* core_duel_factory_;
+	DeckValidatorType const* deck_validator_;
+	CoreDuelFactoryType const* core_duel_factory_;
 	YGOpen::Proto::Room::Options options_;
 	RoomState state_;
 
-	Client const* host_;
+	ClientType const* host_;
 	Teams teams_;
-	std::set<Client*> spectators_;
+	std::set<ClientType*> spectators_;
 
 	google::protobuf::Arena arena_;
 
