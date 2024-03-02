@@ -16,12 +16,12 @@ namespace YGOpen::Proto::Duel
 {
 
 // Used to indicate that the place doesn't belong to an overlay.
-constexpr int OSEQ_INVALID = -1;
+constexpr int32_t OSEQ_INVALID = -1;
 
 // Check equivalence only of protobuf-exposed methods.
 struct PlaceLess
 {
-	auto operator()(const Place& lhs, const Place& rhs) const noexcept -> bool
+	auto operator()(Place const& lhs, Place const& rhs) const noexcept -> bool
 	{
 		if(lhs.con() < rhs.con())
 			return true;
@@ -44,30 +44,30 @@ struct PlaceLess
 	}
 };
 
-[[nodiscard]] inline auto get_con(const Place& place) noexcept -> auto
+[[nodiscard]] inline auto get_con(Place const& place) noexcept -> auto
 {
 	return static_cast<YGOpen::Duel::Controller>(place.con());
 }
 
-[[nodiscard]] inline auto get_loc(const Place& place) noexcept -> auto
+[[nodiscard]] inline auto get_loc(Place const& place) noexcept -> auto
 {
 	return static_cast<YGOpen::Duel::Location>(place.loc());
 }
 
 // See duel/constants/location.hpp `is_empty`.
-[[nodiscard]] inline auto is_empty(const Place& place) noexcept -> bool
+[[nodiscard]] inline auto is_empty(Place const& place) noexcept -> bool
 {
 	return is_empty(get_loc(place));
 }
 
 // See duel/constants/location.hpp `is_pile`.
-[[nodiscard]] inline auto is_pile(const Place& place) noexcept -> bool
+[[nodiscard]] inline auto is_pile(Place const& place) noexcept -> bool
 {
 	return is_pile(get_loc(place));
 }
 
 // See duel/constants/location.hpp `is_zone`.
-[[nodiscard]] inline auto is_zone(const Place& place) noexcept -> bool
+[[nodiscard]] inline auto is_zone(Place const& place) noexcept -> bool
 {
 	return is_zone(get_loc(place));
 }

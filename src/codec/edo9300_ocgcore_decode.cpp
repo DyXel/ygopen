@@ -215,7 +215,7 @@ auto decode_one_answer(Proto::Duel::Msg::Request const& request,
 		auto const& places = answer.select_zone().places();
 		out.resize(sizeof(int8_t) * 3U * places.size());
 		auto* ptr = out.data();
-		for(const auto& p : places)
+		for(auto const& p : places)
 		{
 			write(ptr, static_cast<int8_t>(p.con()));
 			write(ptr, static_cast<int8_t>(p.loc()));

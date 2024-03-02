@@ -138,7 +138,7 @@ RawStringFormats:
     CanonicalDelimiter: ''
     # BasedOnStyle: google
 ReflowComments: true
-# ShortNamespaceLines: 0 # Not available at the moment.
+ShortNamespaceLines: 0
 SortIncludes: true
 SortUsingDeclarations: true
 SpaceAfterCStyleCast: false
@@ -161,13 +161,7 @@ SpacesInParentheses: false
 SpacesInSquareBrackets: false
 SpaceBeforeSquareBrackets: false
 Standard: c++17
-StatementMacros:
-  - Q_UNUSED
-  - QT_REQUIRE_VERSION
 TabWidth: 4
 UseCRLF: false
 UseTab: AlignWithSpaces
-WhitespaceSensitiveMacros:
-  - STRINGIZE
-  - PP_STRINGIZE
-  - BOOST_PP_STRINGIZE
+QualifierAlignment: Right

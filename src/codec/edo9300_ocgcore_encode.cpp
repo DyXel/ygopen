@@ -28,6 +28,7 @@ using CCount = uint32_t;   // Count type, used for arrays read.
 using CCode = uint32_t;    // Card code type.
 using CLoc = uint32_t;     // Location type.
 using CSeq = uint32_t;     // Sequence type.
+using COSeq = int32_t;     // Overlay sequence type.
 using CPos = uint32_t;     // Position type.
 using CEffect = uint64_t;  // Effect descriptor type.
 using CCounter = uint32_t; // Counter type.
@@ -201,9 +202,9 @@ inline auto read_loc_info(uint8_t const*& ptr,
                           YGOpen::Proto::Duel::Place& place) noexcept -> void
 {
 	using namespace YGOpen::Duel;
-	constexpr Loc LOCATION_OVERLAY = 0x80U;
+	constexpr CLoc LOCATION_OVERLAY = 0x80U;
 	place.set_con(read_con(ptr));
-	auto const loc = read_loc<Loc>(ptr);
+	auto const loc = static_cast<CLoc>(read_loc<Loc>(ptr));
 	place.set_loc(loc & (~LOCATION_OVERLAY));
 	if constexpr(!std::is_void<Seq>())
 	{
@@ -544,7 +545,7 @@ auto encode_one(google::protobuf::Arena& arena, IEncodeContext& context,
 		auto* place = meta->mutable_shuffle_pile()->add_places();
 		place->set_con(read_con(data));
 		place->set_loc(LOCATION_HAND);
-		const auto count = read<CCount>(data, ".size()");
+		auto const count = read<CCount>(data, ".size()");
 		for(CCount i = 0; i < count; i++)
 			skip<CCode>(data, "card code ", static_cast<int>(i));
 		break;
@@ -655,7 +656,7 @@ auto encode_one(google::protobuf::Arena& arena, IEncodeContext& context,
 	case MSG_CHAIN_NEGATED:
 	case MSG_CHAIN_DISABLED:
 	{
-		static constexpr ChainStatus MAP[6U] = {
+		static constexpr std::array MAP{
 			ChainStatus::CHAIN_STATUS_CHAINED,
 			ChainStatus::CHAIN_STATUS_SOLVING,
 			static_cast<ChainStatus>(0), // NOTE: CHAIN_SOLVED
@@ -664,7 +665,7 @@ auto encode_one(google::protobuf::Arena& arena, IEncodeContext& context,
 			ChainStatus::CHAIN_STATUS_EFF_NEGATED,
 		};
 		auto* meta = create_event()->mutable_meta();
-		meta->set_chain_status(MAP[core_msg - MSG_CHAINED]);
+		meta->set_chain_status(MAP[core_msg - MSG_CHAINED]); // NOLINT
 		skip<uint8_t>(data, "chain num");
 		break;
 	}
@@ -675,12 +676,12 @@ auto encode_one(google::protobuf::Arena& arena, IEncodeContext& context,
 		break;
 	}
 // NOLINTNEXTLINE: No reflection :(
-#define LP(t)                                           \
-	do                                                  \
-	{                                                   \
-		auto* lp = create_event()->mutable_lp();        \
-		lp->set_controller(read_con(data));             \
-		lp->set_##t(read<uint32_t>(data, "lp amount")); \
+#define LP(t)                                                  \
+	do                                                         \
+	{                                                          \
+		auto* lp = create_event()->mutable_lp();               \
+		lp->set_controller(read_con(data));                    \
+		lp->set_##t(read<uint32_t>(data, "lp amount to " #t)); \
 	} while(0)
 	case MSG_DAMAGE:
 	{
@@ -748,7 +749,7 @@ auto encode_one(google::protobuf::Arena& arena, IEncodeContext& context,
 	{                                                                       \
 		auto* res = create_event()->mutable_result()->mutable_##r();        \
 		res->set_actor(read_con(data));                                     \
-		const auto count = read<CSCount>(data, "count");                    \
+		const auto count = read<CSCount>(data, #r " count");                \
 		for(CSCount i = 0; i < count; i++)                                  \
 			res->add_values(static_cast<t>(read<uint8_t>(data, "result"))); \
 	} while(0)
@@ -765,8 +766,9 @@ auto encode_one(google::protobuf::Arena& arena, IEncodeContext& context,
 #undef RESULT
 	case MSG_HAND_RES:
 	{
+		// TODO: Review this (Why is it signed in Proto, implicit casts here)
 		auto* rps = create_event()->mutable_result()->mutable_rps();
-		const auto hands_results = read<uint8_t>(data, "hand results");
+		auto const hands_results = read<uint8_t>(data, "hand results");
 		auto to_rps = [](uint8_t v) constexpr noexcept
 		{
 			return static_cast<RockPaperScissors>(v);
@@ -805,7 +807,7 @@ auto encode_one(google::protobuf::Arena& arena, IEncodeContext& context,
 	{
 		auto* exchange = create_event()->mutable_board()->mutable_exchange();
 		auto* resize = exchange->mutable_resize();
-		const auto controller = read_con(data);
+		auto const controller = read_con(data);
 		exchange->set_con(controller);
 		auto add_pile = [&](Location loc, CCount count)
 		{
@@ -817,10 +819,10 @@ auto encode_one(google::protobuf::Arena& arena, IEncodeContext& context,
 			place->set_oseq(OSEQ_INVALID);
 			op->set_count(count);
 		};
-		const auto main_size = read<CCount>(data, "main");
-		const auto extra_size = read<CCount>(data, "extra");
+		auto const main_size = read<CCount>(data, "main");
+		auto const extra_size = read<CCount>(data, "extra");
 		skip<CCount>(data, "extra_p_count");
-		const auto hand_size = read<CCount>(data, "hand");
+		auto const hand_size = read<CCount>(data, "hand");
 		add_pile(LOCATION_MAIN_DECK, main_size);
 		add_pile(LOCATION_EXTRA_DECK, extra_size);
 		add_pile(LOCATION_HAND, hand_size);
@@ -859,7 +861,7 @@ auto encode_one(google::protobuf::Arena& arena, IEncodeContext& context,
 					add_one(loc, seq, OSEQ_INVALID);
 					const auto mats = read<CCount>(data, "xyz mats count");
 					for(CCount oseq = 0U; oseq < mats; oseq++)
-						add_one(loc, seq, oseq);
+						add_one(loc, seq, static_cast<COSeq>(oseq));
 				}
 			};
 			auto add_pile = [&](Location loc, CCount count)
@@ -874,8 +876,8 @@ auto encode_one(google::protobuf::Arena& arena, IEncodeContext& context,
 			};
 			log("reading controller ", con);
 			state->add_lps(read<uint32_t>(data, "LP"));
-			parse_card_zone_array(7U, LOCATION_MONSTER_ZONE);
-			parse_card_zone_array(8U, LOCATION_SPELL_ZONE);
+			parse_card_zone_array(7U, LOCATION_MONSTER_ZONE); // NOLINT
+			parse_card_zone_array(8U, LOCATION_SPELL_ZONE);   // NOLINT
 			add_pile(LOCATION_MAIN_DECK, read<CCount>(data, "main"));
 			add_pile(LOCATION_HAND, read<CCount>(data, "hand"));
 			add_pile(LOCATION_GRAVEYARD, read<CCount>(data, "graveyard"));
@@ -885,7 +887,7 @@ auto encode_one(google::protobuf::Arena& arena, IEncodeContext& context,
 		};
 		read_controller_state(CONTROLLER_0);
 		read_controller_state(CONTROLLER_1);
-		const auto chain_count = read<CCount>(data, "chain count");
+		auto const chain_count = read<CCount>(data, "chain count");
 		for(CCount i = 0U; i < chain_count; i++)
 		{
 			auto* chain = state->add_chains();
@@ -948,7 +950,7 @@ auto encode_one(google::protobuf::Arena& arena, IEncodeContext& context,
 				overlay_place->set_con(controller);
 				overlay_place->set_loc(loc_seq.first);
 				overlay_place->set_seq(loc_seq.second);
-				overlay_place->set_oseq(i);
+				overlay_place->set_oseq(static_cast<COSeq>(i));
 				overlay_data->mutable_code()->set_value(code);
 			}
 			skip(data, eqr.bytes_read);
@@ -972,7 +974,7 @@ auto encode_one(google::protobuf::Arena& arena, IEncodeContext& context,
 			overlay_place->set_con(place.con());
 			overlay_place->set_loc(place.loc());
 			overlay_place->set_seq(place.seq());
-			overlay_place->set_oseq(i);
+			overlay_place->set_oseq(static_cast<COSeq>(i));
 			overlay_data->mutable_code()->set_value(code);
 		}
 		skip(data, eqr.bytes_read);
@@ -1233,8 +1235,8 @@ auto encode_one(google::protobuf::Arena& arena, IEncodeContext& context,
 		bool const triggering = (read<uint8_t>(data, "spe_count") & 0x7FU) > 0U;
 		select_to_chain->set_triggering(triggering);
 		select_to_chain->set_forced(read_bool(data, "forced"));
-		skip(data, 8U, "timing hints");
-		{ // Activable cards
+		skip(data, 8U, "timing hints"); // NOLINT
+		{                               // Activable cards
 			auto const count = read<CCount>(data, "number of cards");
 			for(CCount i = 0; i < count; i++)
 			{
@@ -1290,7 +1292,7 @@ auto encode_one(google::protobuf::Arena& arena, IEncodeContext& context,
 	{
 		// Core Mitigation: See MSG_MATCH_KILL handling.
 		auto* finish = create_event()->mutable_finish();
-		const auto winner = read<CPlayer>(data, "who won");
+		auto const winner = read<CPlayer>(data, "who won");
 		finish->set_win_reason(read<uint8_t>(data, "win reason"));
 		finish->set_match_win_reason(context.get_match_win_reason());
 		if(winner != 2U)
@@ -1607,7 +1609,7 @@ auto encode_one(google::protobuf::Arena& arena, IEncodeContext& context,
 			CARD_HINT_TYPE_DESC_ADD = 6U,
 			CARD_HINT_TYPE_DESC_REMOVE = 7U,
 		};
-		data += CORE_LOC_INFO_SIZE;
+		skip(data, CORE_LOC_INFO_SIZE);
 		skip<CardHintType>(data, "card hint type");
 		skip<uint64_t>(data, "card hint value");
 		result.state = EncodeOneResult::State::SWALLOWED;

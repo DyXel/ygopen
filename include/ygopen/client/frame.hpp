@@ -156,13 +156,13 @@ public:
 
 	[[nodiscard]] constexpr auto pile(Duel::Controller con,
 	                                  Duel::Location loc) const noexcept
-		-> const PileType&
+		-> PileType const&
 	{
 		return pile_(*this, con, loc);
 	}
 
 	[[nodiscard]] constexpr auto pile(PlaceType const& place) const noexcept
-		-> const PileType&
+		-> PileType const&
 	{
 		return pile_(*this, get_con(place), get_loc(place));
 	}
@@ -555,7 +555,7 @@ protected:
 		// match, but we know that they are unique so no need to traverse the
 		// entire container after the first removal is performed.
 		bool destructed = false;
-		const auto end = cards_.m.cend();
+		auto const end = cards_.m.cend();
 		auto prev_it = cards_.m.before_begin();
 		using Iter = typename decltype(cards_.m)::iterator;
 		for(Iter it; (it = std::next(prev_it)) != end; prev_it++)

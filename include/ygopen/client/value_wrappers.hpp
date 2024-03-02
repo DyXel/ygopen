@@ -20,12 +20,12 @@ public:
 
 	explicit constexpr Value() noexcept : value_() {}
 
-	[[nodiscard]] constexpr auto get() const noexcept -> const T&
+	[[nodiscard]] constexpr auto get() const noexcept -> T const&
 	{
 		return value_;
 	}
 
-	constexpr auto set(const T& v) noexcept -> void { value_ = v; }
+	constexpr auto set(T const& v) noexcept -> void { value_ = v; }
 
 private:
 	T value_;
@@ -48,12 +48,12 @@ public:
 		: values_(1U, alloc), current_value_(values_.cbegin())
 	{}
 
-	[[nodiscard]] constexpr auto get() const noexcept -> const T&
+	[[nodiscard]] constexpr auto get() const noexcept -> T const&
 	{
 		return *current_value_;
 	}
 
-	constexpr auto set(const T& v) noexcept -> void
+	constexpr auto set(T const& v) noexcept -> void
 	{
 		if(current_value_ == --values_.cend())
 			values_.emplace_back(v);
