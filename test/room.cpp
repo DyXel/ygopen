@@ -27,20 +27,28 @@ class Client
 public:
 	using Expectation = std::function<void(EvRef)>;
 
-	Client(std::string_view name) noexcept
+	explicit Client(std::string_view name) noexcept
 	{
 		user_.set_name(name.data(), name.size());
 	}
+
+	Client(Client const&) = delete;
+	Client(Client&&) noexcept = default;
+	auto operator=(Client const&) -> Client& = delete;
+	auto operator=(Client&&) noexcept -> Client& = delete;
 
 	auto send(EvRef e) noexcept -> void { events_received_.push_back(e); }
 
 	auto fill_user(YGOpen::Proto::User& user) const noexcept { user = user_; }
 
-	auto expect(Expectation f) noexcept -> void { expectations_.push_back(f); }
+	auto expect(Expectation f) noexcept -> void
+	{
+		expectations_.emplace_back(std::move(f));
+	}
 
 	auto expect(EvConfCase ec) noexcept -> void
 	{
-		expectations_.push_back(
+		expectations_.emplace_back(
 			[ec](EvRef e)
 			{
 				ASSERT_EQ(e.t_case(), EvCase::kConfiguring);
@@ -50,7 +58,7 @@ public:
 
 	auto expect(EvDFTCase ec) noexcept -> void
 	{
-		expectations_.push_back(
+		expectations_.emplace_back(
 			[ec](EvRef e)
 			{
 				ASSERT_EQ(e.t_case(), EvCase::kDecidingFirstTurn);
@@ -86,7 +94,7 @@ template<typename... Cs>
 	class Clients
 	{
 	public:
-		Clients(Cs&... clients) : clients_(clients...) {}
+		explicit Clients(Cs&... clients) : clients_(clients...) {}
 
 		auto expect(Client::Expectation f) noexcept -> void
 		{
@@ -112,23 +120,26 @@ template<typename... Cs>
 class DeckValidator
 {
 public:
-	DeckValidator(bool check_status = true) : check_status_(check_status) {}
+	explicit DeckValidator(bool check_status = true) noexcept
+		: check_status_(check_status)
+	{}
 
-	auto check(std::string_view banlist_id, YGOpen::Proto::Deck const& deck,
-	           YGOpen::Proto::DeckError& error) const noexcept -> bool
+	auto check(std::string_view /*unused*/,
+	           YGOpen::Proto::Deck const& /*unused*/,
+	           YGOpen::Proto::DeckError& /*unused*/) const noexcept -> bool
 	{
 		return check_status_;
 	}
 
 private:
 	bool check_status_;
-} dv;
+} const dv;
 
 class CoreDuelFactory
 {
 public:
 	auto make_duel(/*TODO*/) const noexcept -> void {}
-} cdf;
+} const cdf;
 
 using TestRoom =
 	YGOpen::Server::BasicRoom<Client, DeckValidator, CoreDuelFactory>;
@@ -148,7 +159,7 @@ TEST(ServerRoom, ConstructionWithHostWorks)
 		{
 			ASSERT_TRUE(e.has_configuring());
 			ASSERT_TRUE(e.configuring().has_duelist_enters());
-			auto& de = e.configuring().duelist_enters();
+			auto const& de = e.configuring().duelist_enters();
 			EXPECT_EQ(de.team(), 0);
 			EXPECT_EQ(de.pos(), 0);
 			EXPECT_TRUE(de.is_host());
@@ -169,7 +180,7 @@ TEST(ServerRoom, ConstructionOptionsClampingWorks)
 			ASSERT_TRUE(e.has_configuring());
 			ASSERT_TRUE(e.configuring().has_entering_state());
 			ASSERT_TRUE(e.configuring().entering_state().has_options());
-			auto& opts = e.configuring().entering_state().options();
+			auto const& opts = e.configuring().entering_state().options();
 			EXPECT_EQ(opts.max_duelists_size(), 2);
 			EXPECT_EQ(opts.max_duelists(0), 3);
 			EXPECT_EQ(opts.max_duelists(1), 1);
@@ -196,9 +207,9 @@ TEST(ServerRoom, ConfiguringStateJoining1V1Works)
 			ASSERT_TRUE(e.has_configuring());
 			ASSERT_TRUE(e.configuring().has_entering_state());
 			ASSERT_TRUE(e.configuring().entering_state().has_options());
-			auto& ds = e.configuring().entering_state().duelists();
+			auto const& ds = e.configuring().entering_state().duelists();
 			ASSERT_EQ(ds.size(), 1);
-			auto& d = ds[0];
+			auto const& d = ds[0];
 			EXPECT_EQ(d.team(), 0);
 			EXPECT_EQ(d.pos(), 0);
 			EXPECT_TRUE(d.has_user());
@@ -210,7 +221,7 @@ TEST(ServerRoom, ConfiguringStateJoining1V1Works)
 		{
 			ASSERT_TRUE(e.has_configuring());
 			ASSERT_TRUE(e.configuring().has_duelist_enters());
-			auto& de = e.configuring().duelist_enters();
+			auto const& de = e.configuring().duelist_enters();
 			EXPECT_EQ(de.team(), 1);
 			EXPECT_EQ(de.pos(), 0);
 			EXPECT_EQ(de.user().name(), "Client2");
@@ -228,7 +239,8 @@ TEST(ServerRoom, ConfiguringStateJoining3V3Works)
 	c1.expect(EvConfCase::kEnteringState);
 	c1.expect(EvConfCase::kDuelistEnters);
 	auto room = TestRoom{dv, cdf, c1, options};
-	int team = 1, pos = 0;
+	int team = 1;
+	int pos = 0;
 	std::vector<Client> clients;
 	clients.reserve(5);
 	for(int i = 0; i < 5; i++)
@@ -240,7 +252,7 @@ TEST(ServerRoom, ConfiguringStateJoining3V3Works)
 			ASSERT_TRUE(e.has_configuring());
 			ASSERT_TRUE(e.configuring().has_entering_state());
 			ASSERT_TRUE(e.configuring().entering_state().has_options());
-			auto& ds = e.configuring().entering_state().duelists();
+			auto const& ds = e.configuring().entering_state().duelists();
 			ASSERT_EQ(ds.size(), dc);
 			// TODO: Unhardcode this...
 			std::vector<std::vector<std::pair<int, int>>> slots = {
@@ -271,7 +283,7 @@ TEST(ServerRoom, ConfiguringStateJoining3V3Works)
 				}};
 			for(int j = 0; j < dc; j++)
 			{
-				auto& d = ds[j];
+				auto const& d = ds[j];
 				auto [t, p] = slots.at(dc - 1).at(j);
 				EXPECT_EQ(d.team(), t);
 				EXPECT_EQ(d.pos(), p);
@@ -281,7 +293,7 @@ TEST(ServerRoom, ConfiguringStateJoining3V3Works)
 		{
 			ASSERT_TRUE(e.has_configuring());
 			ASSERT_TRUE(e.configuring().has_duelist_enters());
-			auto& de = e.configuring().duelist_enters();
+			const auto& de = e.configuring().duelist_enters();
 			EXPECT_EQ(de.team(), team);
 			EXPECT_EQ(de.pos(), pos);
 			EXPECT_EQ(de.user().name(), name);
@@ -395,7 +407,7 @@ TEST(ServerRoom, ConfiguringReadyingWithValidDeckWorks)
 		{
 			ASSERT_TRUE(e.has_configuring());
 			ASSERT_TRUE(e.configuring().has_update_duelist());
-			auto& ud = e.configuring().update_duelist();
+			const auto& ud = e.configuring().update_duelist();
 			EXPECT_EQ(ud.team(), 0);
 			EXPECT_EQ(ud.pos(), 0);
 			EXPECT_TRUE(ud.is_ready());
@@ -408,7 +420,7 @@ TEST(ServerRoom, ConfiguringReadyingWithValidDeckWorks)
 		{
 			ASSERT_TRUE(e.has_configuring());
 			ASSERT_TRUE(e.configuring().has_update_duelist());
-			auto& ud = e.configuring().update_duelist();
+			const auto& ud = e.configuring().update_duelist();
 			EXPECT_FALSE(ud.is_ready());
 		});
 }
@@ -434,9 +446,9 @@ TEST(ServerRoom, ConfiguringNonHostReadyingWorks)
 			ASSERT_TRUE(e.has_configuring());
 			ASSERT_TRUE(e.configuring().has_entering_state());
 			ASSERT_TRUE(e.configuring().entering_state().has_options());
-			auto& ds = e.configuring().entering_state().duelists();
+			const auto& ds = e.configuring().entering_state().duelists();
 			ASSERT_EQ(ds.size(), 1);
-			auto& d = ds[0];
+			const auto& d = ds[0];
 			EXPECT_EQ(d.team(), 0);
 			EXPECT_EQ(d.pos(), 0);
 			EXPECT_TRUE(d.has_user());
@@ -453,7 +465,7 @@ TEST(ServerRoom, ConfiguringNonHostReadyingWorks)
 		{
 			ASSERT_TRUE(e.has_configuring());
 			ASSERT_TRUE(e.configuring().has_update_duelist());
-			auto& ud = e.configuring().update_duelist();
+			const auto& ud = e.configuring().update_duelist();
 			EXPECT_TRUE(ud.has_user());
 			EXPECT_EQ(ud.user().name(), "Client2");
 			EXPECT_TRUE(ud.is_ready());
@@ -493,7 +505,6 @@ class ServerRoomDecidingFirstTurn : public ::testing::Test
 protected:
 	Client c1{"Client1"};
 	Client c2{"Client2"};
-	std::optional<TestRoom> room_opt;
 
 	auto SetUp() -> void override
 	{
@@ -504,7 +515,8 @@ protected:
 		c1.expect(EvConfCase::kDuelistEnters);
 	}
 
-	auto emplace_room(YGOpen::Proto::Room::Options const& options)
+	[[nodiscard]] auto emplace_room(YGOpen::Proto::Room::Options const& options)
+		-> TestRoom&
 	{
 		room_opt.emplace(dv, cdf, c1, options);
 		auto& room = *room_opt;
@@ -521,16 +533,17 @@ protected:
 		room.visit(c2, s2_);
 		wrap(c1, c2).expect(EvDFTCase::kEnteringState);
 		room.visit(c1, s3_);
+		return room;
 	}
 
 private:
 	Sig s1_, s2_, s3_;
+	std::optional<TestRoom> room_opt;
 };
 
 TEST_F(ServerRoomDecidingFirstTurn, HostDecidingWorks)
 {
-	emplace_room({});
-	auto& room = *room_opt;
+	auto& room = emplace_room({});
 	Sig s;
 	s.mutable_deciding_first_turn()->set_team_going_first(1);
 	room.visit(c1, s);
@@ -539,7 +552,7 @@ TEST_F(ServerRoomDecidingFirstTurn, HostDecidingWorks)
 		{
 			ASSERT_TRUE(e.has_deciding_first_turn());
 			ASSERT_TRUE(e.deciding_first_turn().has_result());
-			auto& r = e.deciding_first_turn().result();
+			const auto& r = e.deciding_first_turn().result();
 			EXPECT_EQ(r.team_going_first(), 1);
 		});
 }

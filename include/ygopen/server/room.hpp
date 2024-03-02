@@ -8,6 +8,7 @@
 #include <array>
 #include <google/protobuf/arena.h>
 #include <set>
+#include <utility>
 #include <ygopen/detail/config.hpp>
 #include <ygopen/proto/deck.hpp>
 #include <ygopen/proto/room.hpp>
@@ -63,10 +64,10 @@ public:
 
 	BasicRoom(DeckValidator const& deck_validator,
 	          CoreDuelFactory const& core_duel_factory, Client& host,
-	          YGOpen::Proto::Room::Options const& options) noexcept
+	          YGOpen::Proto::Room::Options options) noexcept
 		: deck_validator_(&deck_validator)
 		, core_duel_factory_(&core_duel_factory)
-		, options_(options)
+		, options_(std::move(options))
 		, state_(RoomState::STATE_HOSTING_CLOSING)
 		, host_(&host)
 		, teams_({})
@@ -359,7 +360,7 @@ private:
 		YGOpen::Proto::Deck deck;
 
 		constexpr DuelistSlot() noexcept
-			: deck_valid(false), ready(false), client(nullptr), deck()
+			: deck_valid(false), ready(false), client(nullptr)
 		{}
 	};
 
