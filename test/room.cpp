@@ -5,8 +5,10 @@
  */
 #include <functional>
 #include <gtest/gtest.h>
+#include <random>
 #include <string_view>
 #include <tuple>
+#include <utility>
 #include <vector>
 #include <ygopen/server/room.hpp>
 
@@ -141,14 +143,47 @@ public:
 	auto make_duel(/*TODO*/) const noexcept -> void {}
 } const cdf;
 
+class RandomNumberGenerator
+{
+public:
+	using result_type = unsigned;
+
+	explicit RandomNumberGenerator(std::vector<result_type> results) noexcept
+		: results_(std::move(results)), current_(0)
+	{}
+
+	constexpr static auto min() -> result_type { return 0; }
+	constexpr static auto max() -> result_type { return ~result_type{}; }
+
+	auto operator()() -> result_type
+	{
+		if(current_ < results_.size())
+			return results_[current_++];
+		return min();
+	}
+
+private:
+	std::vector<result_type> results_;
+	size_t current_;
+} const rng{{}};
+static_assert(RandomNumberGenerator::min() != RandomNumberGenerator::max());
+
 struct TestRoomTraits
 {
 	using ClientType = Client;
 	using DeckValidatorType = DeckValidator;
 	using CoreDuelFactoryType = CoreDuelFactory;
+	using RNGType = RandomNumberGenerator;
 };
 
 using TestRoom = YGOpen::Server::BasicRoom<TestRoomTraits>;
+
+auto default_room_with_host(Client& c,
+                            YGOpen::Proto::Room::Options options) noexcept
+	-> TestRoom
+{
+	return TestRoom{dv, cdf, rng, c, std::move(options)};
+}
 
 TEST(ServerRoom, ConstructionWithHostWorks)
 {
@@ -170,14 +205,14 @@ TEST(ServerRoom, ConstructionWithHostWorks)
 			EXPECT_EQ(de.pos(), 0);
 			EXPECT_TRUE(de.is_host());
 		});
-	auto room = TestRoom{dv, cdf, c, {}};
+	auto room = default_room_with_host(c, {});
 }
 
 TEST(ServerRoom, ConstructionOptionsClampingWorks)
 {
 	Client c("Client");
 	YGOpen::Proto::Room::Options options;
-	options.add_max_duelists(99);
+	options.add_max_duelists(99); // NOLINT: Testing clamping
 	// NOTE: Only setting one on purpose, to test that the room fills the
 	//       missing value for the second team.
 	c.expect(
@@ -194,7 +229,7 @@ TEST(ServerRoom, ConstructionOptionsClampingWorks)
 			EXPECT_EQ(opts.ftdm(), FTDM::FTDM_HOST_CHOOSES);
 		});
 	c.expect(EvConfCase::kDuelistEnters);
-	auto room = TestRoom{dv, cdf, c, options};
+	auto room = default_room_with_host(c, options);
 }
 
 TEST(ServerRoom, ConfiguringStateJoining1V1Works)
@@ -205,7 +240,7 @@ TEST(ServerRoom, ConfiguringStateJoining1V1Works)
 	Client c1("Client1");
 	c1.expect(EvConfCase::kEnteringState);
 	c1.expect(EvConfCase::kDuelistEnters);
-	auto room = TestRoom{dv, cdf, c1, options};
+	auto room = default_room_with_host(c1, options);
 	Client c2("Client2");
 	c2.expect(
 		[](EvRef e)
@@ -244,12 +279,13 @@ TEST(ServerRoom, ConfiguringStateJoining3V3Works)
 	Client c1("Client1");
 	c1.expect(EvConfCase::kEnteringState);
 	c1.expect(EvConfCase::kDuelistEnters);
-	auto room = TestRoom{dv, cdf, c1, options};
+	auto room = default_room_with_host(c1, options);
 	int team = 1;
 	int pos = 0;
 	std::vector<Client> clients;
-	clients.reserve(5);
-	for(int i = 0; i < 5; i++)
+	constexpr int MAX_CLIENTS = 6;
+	clients.reserve(MAX_CLIENTS - 1);
+	for(int i = 0; i < MAX_CLIENTS - 1; i++)
 	{
 		auto const name = "Client" + std::to_string(i + 2);
 		auto& c = clients.emplace_back(name);
@@ -329,7 +365,7 @@ TEST(ServerRoom, ConfiguringStateJoiningFullWorks)
 	Client c1("Client1");
 	c1.expect(EvConfCase::kEnteringState);
 	c1.expect(EvConfCase::kDuelistEnters);
-	auto room = TestRoom{dv, cdf, c1, options};
+	auto room = default_room_with_host(c1, options);
 	Client c2("Client2");
 	c2.expect(EvConfCase::kEnteringState);
 	c2.expect(EvConfCase::kDuelistEnters);
@@ -363,7 +399,7 @@ TEST(ServerRoom, ConfiguringUpdatingInvalidDeckWorks)
 	Client c("Client");
 	c.expect(EvConfCase::kEnteringState);
 	c.expect(EvConfCase::kDuelistEnters);
-	auto room = TestRoom{falsy_dv, cdf, c, {}};
+	auto room = TestRoom{falsy_dv, cdf, rng, c, {}};
 	Sig s1;
 	s1.mutable_configuring()->mutable_update_deck();
 	room.visit(c, s1);
@@ -381,7 +417,7 @@ TEST(ServerRoom, ConfiguringUpdatingValidDeckWorks)
 	Client c("Client");
 	c.expect(EvConfCase::kEnteringState);
 	c.expect(EvConfCase::kDuelistEnters);
-	auto room = TestRoom{dv, cdf, c, {}};
+	auto room = default_room_with_host(c, {});
 	Sig s1;
 	s1.mutable_configuring()->mutable_update_deck();
 	room.visit(c, s1);
@@ -399,7 +435,7 @@ TEST(ServerRoom, ConfiguringReadyingWithValidDeckWorks)
 	Client c("Client");
 	c.expect(EvConfCase::kEnteringState);
 	c.expect(EvConfCase::kDuelistEnters);
-	auto room = TestRoom{dv, cdf, c, {}};
+	auto room = default_room_with_host(c, {});
 	Sig s1;
 	s1.mutable_configuring()->mutable_update_deck();
 	room.visit(c, s1);
@@ -436,7 +472,7 @@ TEST(ServerRoom, ConfiguringNonHostReadyingWorks)
 	Client c1("Client1");
 	c1.expect(EvConfCase::kEnteringState);
 	c1.expect(EvConfCase::kDuelistEnters);
-	auto room = TestRoom{dv, cdf, c1, {}};
+	auto room = default_room_with_host(c1, {});
 	Sig s1;
 	s1.mutable_configuring()->mutable_update_deck();
 	room.visit(c1, s1);
@@ -483,7 +519,7 @@ TEST(ServerRoom, ConfiguringStartDuelWorks)
 	Client c1("Client1");
 	c1.expect(EvConfCase::kEnteringState);
 	c1.expect(EvConfCase::kDuelistEnters);
-	auto room = TestRoom{dv, cdf, c1, {}};
+	auto room = default_room_with_host(c1, {});
 	Sig s1;
 	s1.mutable_configuring()->mutable_update_deck();
 	room.visit(c1, s1);
@@ -504,6 +540,7 @@ TEST(ServerRoom, ConfiguringStartDuelWorks)
 	s3.mutable_configuring()->set_start_dueling(true);
 	room.visit(c1, s3);
 	wrap(c1, c2).expect(EvDFTCase::kEnteringState);
+	c1.expect(EvDFTCase::kDecideFirstTurn);
 }
 
 class ServerRoomDecidingFirstTurn : public ::testing::Test
@@ -521,11 +558,12 @@ protected:
 		c1.expect(EvConfCase::kDuelistEnters);
 	}
 
-	[[nodiscard]] auto emplace_room(YGOpen::Proto::Room::Options const& options)
+	[[nodiscard]] auto emplace_room(RandomNumberGenerator rng,
+	                                YGOpen::Proto::Room::Options options)
 		-> TestRoom&
 	{
-		room_opt.emplace(dv, cdf, c1, options);
-		auto& room = *room_opt;
+		room_.emplace(dv, cdf, std::move(rng), c1, std::move(options));
+		auto& room = *room_;
 		c1.expect(EvConfCase::kDeckStatus);
 		room.visit(c1, s1_);
 		c1.expect(EvConfCase::kUpdateDuelist);
@@ -544,12 +582,13 @@ protected:
 
 private:
 	Sig s1_, s2_, s3_;
-	std::optional<TestRoom> room_opt;
+	std::optional<TestRoom> room_;
 };
 
 TEST_F(ServerRoomDecidingFirstTurn, HostDecidingWorks)
 {
-	auto& room = emplace_room({});
+	auto& room = emplace_room(rng, {});
+	c1.expect(EvDFTCase::kDecideFirstTurn);
 	Sig s;
 	s.mutable_deciding_first_turn()->set_team_going_first(1);
 	room.visit(c1, s);
@@ -558,9 +597,66 @@ TEST_F(ServerRoomDecidingFirstTurn, HostDecidingWorks)
 		{
 			ASSERT_TRUE(e.has_deciding_first_turn());
 			ASSERT_TRUE(e.deciding_first_turn().has_result());
-			const auto& r = e.deciding_first_turn().result();
-			EXPECT_EQ(r.team_going_first(), 1);
+			const auto& result = e.deciding_first_turn().result();
+			EXPECT_EQ(result.team_going_first(), 1);
 		});
+}
+
+TEST_F(ServerRoomDecidingFirstTurn, RPSWorks)
+{
+	YGOpen::Proto::Room::Options options;
+	options.set_ftdm(YGOpen::Proto::Room::FTDM_RPS);
+	auto& room = emplace_room(rng, options);
+	// TODO
+}
+
+TEST_F(ServerRoomDecidingFirstTurn, DiceRollWorks)
+{
+	RandomNumberGenerator die_rolls({0, 0, 5, 5, 9, 9, 0, 1}); // NOLINT
+	YGOpen::Proto::Room::Options options;
+	options.set_ftdm(YGOpen::Proto::Room::FTDM_DICE);
+	static_cast<void>(emplace_room(std::move(die_rolls), options));
+	wrap(c1, c2).expect(
+		[](EvRef e)
+		{
+			ASSERT_TRUE(e.has_deciding_first_turn());
+			ASSERT_TRUE(e.deciding_first_turn().has_result());
+			const auto& result = e.deciding_first_turn().result();
+			ASSERT_TRUE(result.has_dice());
+			auto const& dice_results = result.dice().results();
+			ASSERT_EQ(dice_results.size(), 4);
+			EXPECT_EQ(dice_results[0].team0(), 1);
+			EXPECT_EQ(dice_results[0].team1(), 1);
+			EXPECT_EQ(dice_results[1].team0(), 6);
+			EXPECT_EQ(dice_results[1].team1(), 6);
+			EXPECT_EQ(dice_results[2].team0(), 4);
+			EXPECT_EQ(dice_results[2].team1(), 4);
+			EXPECT_EQ(dice_results[3].team0(), 1);
+			EXPECT_EQ(dice_results[3].team1(), 2);
+			EXPECT_EQ(result.team_going_first(), 1);
+		});
+	c2.expect(EvDFTCase::kDecideFirstTurn);
+}
+
+TEST_F(ServerRoomDecidingFirstTurn, CoinTossWorks)
+{
+	RandomNumberGenerator coin_toss({1});
+	YGOpen::Proto::Room::Options options;
+	options.set_ftdm(YGOpen::Proto::Room::FTDM_COIN);
+	static_cast<void>(emplace_room(coin_toss, options));
+	wrap(c1, c2).expect(
+		[](EvRef e)
+		{
+			ASSERT_TRUE(e.has_deciding_first_turn());
+			ASSERT_TRUE(e.deciding_first_turn().has_result());
+			const auto& result = e.deciding_first_turn().result();
+			ASSERT_TRUE(result.has_coin_result());
+			auto const coin_result = result.coin_result();
+			EXPECT_EQ(coin_result,
+		              Ev::DecidingFirstTurn::Result::COIN_RESULT_TAILS);
+			EXPECT_EQ(result.team_going_first(), 1);
+		});
+	c2.expect(EvDFTCase::kDecideFirstTurn);
 }
 
 } // namespace

@@ -60,6 +60,7 @@ concept RoomTraits = requires(T)
 	requires Client<typename T::ClientType>;
 	requires DeckValidator<typename T::DeckValidatorType>;
 	requires CoreDuelFactory<typename T::CoreDuelFactoryType>;
+	requires std::uniform_random_bit_generator<typename T::RNGType>;
 };
 #endif // YGOPEN_HAS_CONCEPTS
 
@@ -72,12 +73,14 @@ public:
 	using DeckValidatorType = typename RoomTraits::DeckValidatorType;
 	using CoreDuelFactoryType = typename RoomTraits::CoreDuelFactoryType;
 	using ClientType = typename RoomTraits::ClientType;
+	using RNGType = typename RoomTraits::RNGType;
 
 	BasicRoom(DeckValidatorType const& deck_validator,
-	          CoreDuelFactoryType const& core_duel_factory, ClientType& host,
-	          YGOpen::Proto::Room::Options options) noexcept
+	          CoreDuelFactoryType const& core_duel_factory, RNGType rng,
+	          ClientType& host, YGOpen::Proto::Room::Options options) noexcept
 		: deck_validator_(&deck_validator)
 		, core_duel_factory_(&core_duel_factory)
+		, rng_(std::move(rng))
 		, options_(std::move(options))
 		, state_(RoomState::STATE_HOSTING_CLOSING)
 		, host_(&host)
@@ -340,17 +343,18 @@ public:
 			{
 				if(options_.ftdm() != FTDM::FTDM_HOST_CHOOSES || &peer != host_)
 					break;
-				auto const team_going_first = s.team_going_first();
-				if(team_going_first > 1)
+				auto const chosen_team = s.team_going_first();
+				if(chosen_team > 1)
 					break;
 				auto* e = event_();
 				auto* r = e->mutable_deciding_first_turn()->mutable_result();
-				r->set_team_going_first(team_going_first);
+				r->set_team_going_first(chosen_team);
 				send_all_(*e);
 				// TODO: Save who is going first to the dueling state.
-				// enter_state_(RoomState::STATE_DUELING);
+				// TODO: enter_state_(RoomState::STATE_DUELING);
 				break;
 			}
+			// TODO: Timeout signal
 			case RoomSignal::DecidingFirstTurn::T_NOT_SET:
 				break;
 			}
@@ -389,14 +393,18 @@ private:
 
 	DeckValidatorType const* deck_validator_;
 	CoreDuelFactoryType const* core_duel_factory_;
+	RNGType rng_;
 	YGOpen::Proto::Room::Options options_;
 	RoomState state_;
 
-	ClientType const* host_;
+	ClientType* host_;
 	Teams teams_;
 	std::set<ClientType*> spectators_;
 
 	google::protobuf::Arena arena_;
+
+	// STATE_DECIDING_FIRST_TURN's state
+	ClientType* first_turn_decider_;
 
 	auto event_() noexcept -> RoomEvent*
 	{
@@ -435,8 +443,7 @@ private:
 		max_duelists.Resize(teams_.size(), 1);
 		for(auto& v : max_duelists)
 			v = std::clamp<uint32_t>(v, 1, std::tuple_size_v<Team>);
-		using FTDM = YGOpen::Proto::Room::FirstTurnDecideMethod;
-		options_.set_ftdm(FTDM::FTDM_HOST_CHOOSES);
+		// NOTE: FirstTurnDecideMethod defaults to 0 (FTDM_HOST_CHOOSES).
 	}
 
 	auto enter_state_(RoomState new_state) noexcept -> void
@@ -459,21 +466,74 @@ private:
 		}
 		case RoomState::STATE_DECIDING_FIRST_TURN:
 		{
-			auto* e = event_();
-			e->mutable_deciding_first_turn()->mutable_entering_state();
-			send_all_(*e);
+			auto get_team_leader = [&](uint32_t team) -> ClientType&
+			{
+				assert(team < teams_.size());
+				for(auto const& s : teams_[team])
+					if(s.client != nullptr)
+						return *s.client;
+				YGOPEN_UNREACHABLE();
+			};
+			auto send_choose_signal = [&](ClientType& client)
+			{
+				// TODO: 10s timer?
+				auto* e = event_();
+				e->mutable_deciding_first_turn()->set_decide_first_turn(true);
+				first_turn_decider_ = &client;
+				client.send(*e);
+			};
+			{
+				auto* e = event_();
+				e->mutable_deciding_first_turn()->mutable_entering_state();
+				send_all_(*e);
+			}
 			using FTDM = YGOpen::Proto::Room::FirstTurnDecideMethod;
 			switch(options_.ftdm())
 			{
 			case FTDM::FTDM_HOST_CHOOSES:
-				// TODO: 10s timer?
+				send_choose_signal(*host_);
 				break;
-			case FTDM::FTDM_RPS:
-				// TODO: Implement
-				// TODO: 10s timer?
+			case FTDM::FTDM_RPS: // TODO: Implement
 				break;
-			case FTDM::FTDM_DICE: // TODO: Roll dice w/ randomness
-			case FTDM::FTDM_COIN: // TODO: Toss coin w/ randomness
+			case FTDM::FTDM_DICE:
+			{
+				auto roll_next_die = [&]() -> uint32_t
+				{
+					return (rng_() % 6) + 1; // NOLINT: Six-sided die.
+				};
+				auto* e = event_();
+				auto* dftr = e->mutable_deciding_first_turn()->mutable_result();
+				auto* d = dftr->mutable_dice();
+				for(;;)
+				{
+					auto& r = *d->add_results();
+					r.set_team0(roll_next_die());
+					r.set_team1(roll_next_die());
+					if(r.team0() != r.team1())
+					{
+						auto const winner = uint32_t{r.team0() < r.team1()};
+						dftr->set_team_going_first(winner);
+						break;
+					}
+				}
+				send_all_(*e);
+				send_choose_signal(get_team_leader(dftr->team_going_first()));
+				break;
+			}
+			case FTDM::FTDM_COIN:
+			{
+				auto* e = event_();
+				auto* dftr = e->mutable_deciding_first_turn()->mutable_result();
+				auto const winner = uint32_t{rng_() % 2U};
+				dftr->set_team_going_first(winner);
+				dftr->set_coin_result(
+					static_cast<
+						RoomEvent::DecidingFirstTurn::Result::CoinResult>(
+						winner));
+				send_all_(*e);
+				send_choose_signal(get_team_leader(winner));
+				break;
+			}
 			case FTDM::FirstTurnDecideMethod_INT_MIN_SENTINEL_DO_NOT_USE_:
 			case FTDM::FirstTurnDecideMethod_INT_MAX_SENTINEL_DO_NOT_USE_:
 				YGOPEN_UNREACHABLE();

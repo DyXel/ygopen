@@ -30,14 +30,14 @@ enum State
 
 enum FirstTurnDecideMethod
 {
-	// Rock paper scissors, winner decides.
-	FTDM_RPS = 0;
-	// Each team rolls a six-sided die, higher roll wins.
-	FTDM_DICE = 1;
-	// A coin is tossed: Heads == team0 wins, Tails == team1 wins.
-	FTDM_COIN = 2;
 	// Room's host chooses which team goes first directly.
-	FTDM_HOST_CHOOSES = 3;
+	FTDM_HOST_CHOOSES = 0;
+	// Rock paper scissors, winner decides.
+	FTDM_RPS = 1;
+	// Each team rolls a six-sided die, higher roll wins.
+	FTDM_DICE = 2;
+	// A coin is tossed: Heads == team0 wins, Tails == team1 wins.
+	FTDM_COIN = 3;
 }
 
 message Duelist
@@ -98,23 +98,48 @@ message Event
 	{
 		message EnteringState
 		{
-
+			// TODO: Do we really need this?
 		}
 
 		message Result
 		{
+			// From core and card textures:
+			// invalid = 0
+			// scissors = 1
+			// rock = 2
+			// paper = 3
+			// invalid = 4
 			message RPS {}  // TODO
-			message Dice {} // TODO
-			message Coin {} // TODO
+
+			message Dice
+			{
+				message ResultPair
+				{
+					// NOTE: Results are from 1 to 6 (so 1-indexed),
+					//       this matches the values from the core.
+					uint32 team0 = 1;
+					uint32 team1 = 2;
+				}
+
+				repeated ResultPair results = 1;
+			}
+
+			// TODO: These match values from the core, move them common place
+			//       between Duel and this.
+			enum CoinResult
+			{
+				COIN_RESULT_HEADS = 0; // team0
+				COIN_RESULT_TAILS = 1; // team1
+			}
 
 			// Either a team (0 or 1), any other value indicates a draw.
 			uint32 team_going_first = 1;
 
 			oneof t
 			{
-				RPS rps             = 2;
-				Dice dice           = 3;
-				Coin coin           = 4;
+				RPS rps                = 2;
+				Dice dice              = 3;
+				CoinResult coin_result = 4;
 			}
 		}
 
