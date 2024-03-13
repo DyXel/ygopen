@@ -23,4 +23,7 @@
 #endif // !defined(YGOPEN_DISABLE_CONCEPTS)
 #endif // !defined(YGOPEN_HAS_CONCEPTS)
 
+#define YGOPEN_TYPEOF(x) \
+	typename std::remove_cv_t<std::remove_reference_t<decltype(x)>>
+
 #endif // YGOPEN_DETAIL_CONFIG_HPP

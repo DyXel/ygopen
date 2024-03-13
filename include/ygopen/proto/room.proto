@@ -18,7 +18,7 @@ option cc_enable_arenas = true;
 enum State
 {
 	// Transitive state, when the room is being constructed or closing.
-	STATE_HOSTING_CLOSING = 0;
+	STATE_MONOSTATE = 0;
 	// Main "Idle" state, where duelists can ready up and where the host can
 	// change settings among other things.
 	STATE_CONFIGURING = 1;

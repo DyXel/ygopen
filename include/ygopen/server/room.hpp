@@ -17,7 +17,6 @@
 namespace YGOpen::Server
 {
 
-using RoomState = YGOpen::Proto::Room::State;
 using RoomEvent = YGOpen::Proto::Room::Event;
 using RoomSignal = YGOpen::Proto::Room::Signal;
 
@@ -82,7 +81,6 @@ public:
 		, core_duel_factory_(&core_duel_factory)
 		, rng_(std::move(rng))
 		, options_(std::move(options))
-		, state_(RoomState::STATE_HOSTING_CLOSING)
 		, host_(&host)
 		, teams_({})
 	{
@@ -96,8 +94,9 @@ public:
 			}
 		}
 		clamp_options_();
-		enter_state_(RoomState::STATE_CONFIGURING);
+		enter_state_<Configuring>();
 		enter(host);
+		assert(states_.index() != YGOpen::Proto::Room::State::STATE_MONOSTATE);
 	}
 
 	// TODO: Construct room from composed teams and no host (matchmaking case)
@@ -111,259 +110,27 @@ public:
 
 	auto enter(ClientType& peer) noexcept -> void
 	{
-		auto find_empty_duelist_slot = [&]() noexcept -> DuelistSearch
-		{
-			auto const& max_duelists = options_.max_duelists();
-			std::array<uint8_t, 2> duelist_count{0, 0};
-			std::array<int8_t, 2> first_empty_pos{-1, -1};
-			DuelistSearch search;
-			for(auto const& t : teams_)
-			{
-				for(auto& s : t)
-				{
-					if(s.client != nullptr)
-						duelist_count[search.team]++;
-					else if(first_empty_pos[search.team] < 0)
-						first_empty_pos[search.team] = search.pos;
-					if(++search.pos == max_duelists[search.team])
-						break;
-				}
-				search.team++;
-				search.pos = 0;
-			}
-			if(first_empty_pos[0] < 0 && first_empty_pos[1] < 0)
-				return search;
-			if((duelist_count[0] <= duelist_count[1] &&
-			    !(first_empty_pos[0] < 0)) ||
-			   first_empty_pos[1] < 0)
-			{
-				assert(!(first_empty_pos[0] < 0));
-				search.team = 0;
-				search.pos = static_cast<uint8_t>(first_empty_pos[0]);
-			}
-			else
-			{
-				assert(!(first_empty_pos[1] < 0));
-				search.team = 1;
-				search.pos = static_cast<uint8_t>(first_empty_pos[1]);
-			}
-			search.slot = &teams_[search.team][search.pos];
-			return search;
-		};
-		switch(state_)
-		{
-		case RoomState::STATE_CONFIGURING:
-		{
-			auto* e = event_();
-			auto* es = e->mutable_configuring()->mutable_entering_state();
-			*es->mutable_options() = options_;
-			{
-				uint8_t team = 0;
-				uint8_t pos = 0;
-				for(auto const& t : teams_)
-				{
-					for(auto& s : t)
-					{
-						if(s.client != nullptr)
-						{
-							auto& duelist = *es->add_duelists();
-							duelist.set_team(team);
-							duelist.set_pos(pos);
-							s.client->fill_user(*duelist.mutable_user());
-							duelist.set_is_host(s.client == host_);
-							duelist.set_is_ready(s.ready);
-						}
-						pos++;
-					}
-					team++;
-					pos = 0;
-				}
-			}
-			es->set_spectator_count(spectators_.size());
-			peer.send(*e);
-			auto const search = find_empty_duelist_slot();
-			auto* e2 = event_();
-			if(search.slot != nullptr)
-			{
-				search.slot->client = &peer;
-				auto* msg = e2->mutable_configuring()->mutable_duelist_enters();
-				msg->set_team(search.team);
-				msg->set_pos(search.pos);
-				peer.fill_user(*msg->mutable_user());
-				msg->set_is_host(host_ == &peer);
-				msg->set_is_ready(false);
-			}
-			else
-			{
-				// NOTE: You can't become a host while initially joining as
-				//       spectator, but you can be a host that changes to it.
-				assert(host_ != &peer);
-				spectators_.insert(&peer);
-				e2->set_spectator_count(spectators_.size());
-			}
-			send_all_(*e2);
-			break;
-		}
-		case RoomState::STATE_HOSTING_CLOSING:
-			break;
-		case RoomState::State_INT_MIN_SENTINEL_DO_NOT_USE_:
-		case RoomState::State_INT_MAX_SENTINEL_DO_NOT_USE_:
-			YGOPEN_UNREACHABLE();
-		}
+		std::visit([&](auto& state) { on_client_enter_(state, peer); },
+		           states_);
 	}
 
 	auto visit(InternalSignal const& signal) noexcept -> void;
 
 	auto visit(ClientType& peer, RoomSignal const& signal) noexcept -> void
 	{
-		auto const& max_duelists = options_.max_duelists();
-		auto find_peer_duelist_slot = [&]() noexcept -> DuelistSearch
-		{
-			DuelistSearch search;
-			for(auto& t : teams_)
+		std::visit(
+			[&](auto& state)
 			{
-				for(auto& s : t)
+				using StateType = YGOPEN_TYPEOF(state);
+				if constexpr(!std::is_same_v<StateType, std::monostate>)
 				{
-					if(s.client == &peer)
-					{
-						search.slot = &s;
-						return search;
-					}
-					if(++search.pos == max_duelists[search.team])
-						break;
+					if(!std::invoke(StateType::signal_querier, signal))
+						return;
+					auto& s = std::invoke(StateType::signal_getter, signal);
+					on_client_signal_(state, peer, s);
 				}
-				search.team++;
-				search.pos = 0;
-			}
-			return search;
-		};
-		auto const signal_case = signal.t_case();
-		switch(state_)
-		{
-		case RoomState::STATE_CONFIGURING:
-		{
-			if(signal_case != RoomSignal::kConfiguring)
-				break;
-			auto const& s = signal.configuring();
-			switch(s.t_case())
-			{
-			case RoomSignal::Configuring::kUpdateDeck:
-			{
-				auto const search = find_peer_duelist_slot();
-				if(search.slot == nullptr)
-					break;
-				auto const& deck = s.update_deck();
-				auto* e = event_();
-				auto* ds = e->mutable_configuring()->mutable_deck_status();
-				auto* de = ds->mutable_deck_error();
-				// TODO: Handle custom banlist.
-				if(deck_validator_->check(options_.banlist_id(), deck, *de))
-				{
-					ds->clear_deck_error();
-					search.slot->deck = deck;
-					search.slot->deck_valid = true;
-				}
-				else
-				{
-					search.slot->deck = {};
-					search.slot->deck_valid = false;
-				}
-				peer.send(*e);
-				break;
-			}
-			case RoomSignal::Configuring::kReadyStatus:
-			{
-				auto const search = find_peer_duelist_slot();
-				if(search.slot == nullptr)
-					break;
-				bool const new_status = s.ready_status();
-				if(new_status == search.slot->ready)
-					break;
-				if(new_status && !search.slot->deck_valid)
-				{
-					// TODO: Report that you need a valid deck before readying.
-					break;
-				}
-				search.slot->ready = new_status;
-				auto* e = event_();
-				auto* msg = e->mutable_configuring()->mutable_update_duelist();
-				msg->set_team(search.team);
-				msg->set_pos(search.pos);
-				peer.fill_user(*msg->mutable_user());
-				msg->set_is_host(host_ == &peer);
-				msg->set_is_ready(new_status);
-				send_all_(*e);
-				break;
-			}
-			case RoomSignal::Configuring::kStartDueling:
-			{
-				if(&peer != host_)
-					break;
-				auto const can_start = [&]() noexcept -> bool
-				{
-					for(auto const& t : teams_)
-					{
-						bool has_atleast_one_duelist = false;
-						for(auto& s : t)
-						{
-							if(s.client != nullptr)
-							{
-								has_atleast_one_duelist = true;
-								if(!s.deck_valid || !s.ready)
-									return false;
-							}
-						}
-						if(!has_atleast_one_duelist)
-							return false;
-					}
-					return true;
-				}();
-				if(!can_start)
-				{
-					// TODO: report?
-					break;
-				}
-				enter_state_(RoomState::STATE_DECIDING_FIRST_TURN);
-				break;
-			}
-			case RoomSignal::Configuring::T_NOT_SET:
-				break;
-			}
-			break;
-		}
-		case RoomState::STATE_DECIDING_FIRST_TURN:
-		{
-			if(signal_case != RoomSignal::kDecidingFirstTurn)
-				break;
-			auto const& s = signal.deciding_first_turn();
-			using FTDM = YGOpen::Proto::Room::FirstTurnDecideMethod;
-			switch(s.t_case())
-			{
-			case RoomSignal::DecidingFirstTurn::kTeamGoingFirst:
-			{
-				if(options_.ftdm() != FTDM::FTDM_HOST_CHOOSES || &peer != host_)
-					break;
-				auto const chosen_team = s.team_going_first();
-				if(chosen_team > 1)
-					break;
-				auto* e = event_();
-				auto* r = e->mutable_deciding_first_turn()->mutable_result();
-				r->set_team_going_first(chosen_team);
-				send_all_(*e);
-				// TODO: Save who is going first to the dueling state.
-				// TODO: enter_state_(RoomState::STATE_DUELING);
-				break;
-			}
-			// TODO: Timeout signal
-			case RoomSignal::DecidingFirstTurn::T_NOT_SET:
-				break;
-			}
-			break;
-		}
-		case RoomState::State_INT_MIN_SENTINEL_DO_NOT_USE_:
-		case RoomState::State_INT_MAX_SENTINEL_DO_NOT_USE_:
-			YGOPEN_UNREACHABLE();
-		}
+			},
+			states_);
 	}
 
 private:
@@ -395,7 +162,6 @@ private:
 	CoreDuelFactoryType const* core_duel_factory_;
 	RNGType rng_;
 	YGOpen::Proto::Room::Options options_;
-	RoomState state_;
 
 	ClientType* host_;
 	Teams teams_;
@@ -403,8 +169,21 @@ private:
 
 	google::protobuf::Arena arena_;
 
-	// STATE_DECIDING_FIRST_TURN's state
-	ClientType* first_turn_decider_;
+	struct Configuring
+	{
+		using SignalType = RoomSignal::Configuring;
+		static constexpr auto signal_querier = &RoomSignal::has_configuring;
+		static constexpr auto signal_getter = &RoomSignal::configuring;
+	};
+	struct DecidingFirstTurn
+	{
+		using SignalType = RoomSignal::DecidingFirstTurn;
+		static constexpr auto signal_querier =
+			&RoomSignal::has_deciding_first_turn;
+		static constexpr auto signal_getter = &RoomSignal::deciding_first_turn;
+		ClientType* first_turn_decider = nullptr;
+	};
+	std::variant<std::monostate, Configuring, DecidingFirstTurn> states_;
 
 	auto event_() noexcept -> RoomEvent*
 	{
@@ -446,103 +225,356 @@ private:
 		// NOTE: FirstTurnDecideMethod defaults to 0 (FTDM_HOST_CHOOSES).
 	}
 
-	auto enter_state_(RoomState new_state) noexcept -> void
+	template<typename T, typename... Args>
+	auto enter_state_(Args&&... args) noexcept -> void
 	{
-		assert(state_ != new_state);
-		state_ = new_state;
-		switch(state_)
-		{
-		case RoomState::STATE_CONFIGURING:
-		{
-			// TODO: If we came from matchmake case:
-			//         * Decide a new host.
-			//         * Re-check Client decks.
+		auto const old_state_idx = states_.index();
+		auto state = states_.template emplace<T>(std::forward<Args>(args)...);
+		auto const new_state_idx = states_.index();
+		assert(old_state_idx != new_state_idx);
+		on_enter_state_(state);
+	}
 
-			// TODO: Set all ready statuses to false.
+	// State entry points
+	template<typename T>
+	auto on_enter_state_(T& /*state*/) noexcept -> void
+	{
+		YGOPEN_UNREACHABLE();
+	}
+
+	auto on_enter_state_(Configuring& /*state*/) noexcept -> void
+	{
+		assert(states_.index() ==
+		       YGOpen::Proto::Room::State::STATE_CONFIGURING);
+		// TODO: If we came from matchmake case:
+		//         * Decide a new host.
+		//         * Re-check Client decks.
+
+		// TODO: Set all ready statuses to false.
+		auto* e = event_();
+		e->mutable_configuring()->mutable_entering_state();
+		send_all_(*e);
+	}
+
+	auto on_enter_state_(DecidingFirstTurn& state) noexcept -> void
+	{
+		assert(states_.index() ==
+		       YGOpen::Proto::Room::State::STATE_DECIDING_FIRST_TURN);
+		auto get_team_leader = [&](uint32_t team) -> ClientType&
+		{
+			assert(team < teams_.size());
+			for(auto const& s : teams_[team])
+				if(s.client != nullptr)
+					return *s.client;
+			YGOPEN_UNREACHABLE();
+		};
+		auto send_choose_signal = [&](ClientType& client)
+		{
+			// TODO: 10s timer?
 			auto* e = event_();
-			e->mutable_configuring()->mutable_entering_state();
+			e->mutable_deciding_first_turn()->set_decide_first_turn(true);
+			state.first_turn_decider = &client;
+			client.send(*e);
+		};
+		{
+			auto* e = event_();
+			e->mutable_deciding_first_turn()->mutable_entering_state();
+			send_all_(*e);
+		}
+		using FTDM = YGOpen::Proto::Room::FirstTurnDecideMethod;
+		switch(options_.ftdm())
+		{
+		case FTDM::FTDM_HOST_CHOOSES:
+			send_choose_signal(*host_);
+			break;
+		case FTDM::FTDM_RPS: // TODO: Implement
+			break;
+		case FTDM::FTDM_DICE:
+		{
+			auto roll_next_die = [&]() -> uint32_t
+			{
+				return (rng_() % 6) + 1; // NOLINT: Six-sided die.
+			};
+			auto* e = event_();
+			auto* dftr = e->mutable_deciding_first_turn()->mutable_result();
+			auto* d = dftr->mutable_dice();
+			for(;;)
+			{
+				auto& r = *d->add_results();
+				r.set_team0(roll_next_die());
+				r.set_team1(roll_next_die());
+				if(r.team0() != r.team1())
+				{
+					auto const winner = uint32_t{r.team0() < r.team1()};
+					dftr->set_team_going_first(winner);
+					break;
+				}
+			}
+			send_all_(*e);
+			send_choose_signal(get_team_leader(dftr->team_going_first()));
+			break;
+		}
+		case FTDM::FTDM_COIN:
+		{
+			auto* e = event_();
+			auto* dftr = e->mutable_deciding_first_turn()->mutable_result();
+			auto const winner = uint32_t{rng_() % 2U};
+			dftr->set_team_going_first(winner);
+			dftr->set_coin_result(
+				static_cast<RoomEvent::DecidingFirstTurn::Result::CoinResult>(
+					winner));
+			send_all_(*e);
+			send_choose_signal(get_team_leader(winner));
+			break;
+		}
+		case FTDM::FirstTurnDecideMethod_INT_MIN_SENTINEL_DO_NOT_USE_:
+		case FTDM::FirstTurnDecideMethod_INT_MAX_SENTINEL_DO_NOT_USE_:
+			YGOPEN_UNREACHABLE();
+		}
+	}
+
+	// Client entry points
+	template<typename T>
+	auto on_client_enter_(T& /*state*/, ClientType& /*peer*/) noexcept -> void
+	{
+		YGOPEN_UNREACHABLE();
+	}
+
+	auto on_client_enter_(Configuring& /*state*/, ClientType& peer) noexcept
+		-> void
+	{
+		auto find_empty_duelist_slot = [&]() noexcept -> DuelistSearch
+		{
+			auto const& max_duelists = options_.max_duelists();
+			std::array<uint8_t, 2> duelist_count{0, 0};
+			std::array<int8_t, 2> first_empty_pos{-1, -1};
+			DuelistSearch search;
+			for(auto const& t : teams_)
+			{
+				for(auto& s : t)
+				{
+					if(s.client != nullptr)
+						duelist_count[search.team]++;
+					else if(first_empty_pos[search.team] < 0)
+						first_empty_pos[search.team] = search.pos;
+					if(++search.pos == max_duelists[search.team])
+						break;
+				}
+				search.team++;
+				search.pos = 0;
+			}
+			if(first_empty_pos[0] < 0 && first_empty_pos[1] < 0)
+				return search;
+			if((duelist_count[0] <= duelist_count[1] &&
+			    !(first_empty_pos[0] < 0)) ||
+			   first_empty_pos[1] < 0)
+			{
+				assert(!(first_empty_pos[0] < 0));
+				search.team = 0;
+				search.pos = static_cast<uint8_t>(first_empty_pos[0]);
+			}
+			else
+			{
+				assert(!(first_empty_pos[1] < 0));
+				search.team = 1;
+				search.pos = static_cast<uint8_t>(first_empty_pos[1]);
+			}
+			search.slot = &teams_[search.team][search.pos];
+			return search;
+		};
+		auto* e = event_();
+		auto* es = e->mutable_configuring()->mutable_entering_state();
+		*es->mutable_options() = options_;
+		{ // Populate duelists
+			uint8_t team = 0;
+			uint8_t pos = 0;
+			for(auto const& t : teams_)
+			{
+				for(auto& s : t)
+				{
+					if(s.client != nullptr)
+					{
+						auto& duelist = *es->add_duelists();
+						duelist.set_team(team);
+						duelist.set_pos(pos);
+						s.client->fill_user(*duelist.mutable_user());
+						duelist.set_is_host(s.client == host_);
+						duelist.set_is_ready(s.ready);
+					}
+					pos++;
+				}
+				team++;
+				pos = 0;
+			}
+		}
+		es->set_spectator_count(spectators_.size());
+		peer.send(*e);
+		auto const search = find_empty_duelist_slot();
+		auto* e2 = event_();
+		if(search.slot != nullptr)
+		{
+			search.slot->client = &peer;
+			auto* msg = e2->mutable_configuring()->mutable_duelist_enters();
+			msg->set_team(search.team);
+			msg->set_pos(search.pos);
+			peer.fill_user(*msg->mutable_user());
+			msg->set_is_host(host_ == &peer);
+			msg->set_is_ready(false);
+		}
+		else
+		{
+			// NOTE: You can't become a host while initially joining as
+			//       spectator, but you can be a host that changes to it.
+			assert(host_ != &peer);
+			spectators_.insert(&peer);
+			e2->set_spectator_count(spectators_.size());
+		}
+		send_all_(*e2);
+	}
+
+	auto on_client_enter_(DecidingFirstTurn& state, ClientType& peer) noexcept
+		-> void
+	{
+		// TODO
+	}
+
+	// Client signals per state
+	auto on_client_signal_(
+		Configuring& state, ClientType& peer,
+		YGOPEN_TYPEOF(state)::SignalType const& signal) noexcept -> void
+	{
+		auto const& max_duelists = options_.max_duelists();
+		auto find_peer_duelist_slot = [&]() noexcept -> DuelistSearch
+		{
+			DuelistSearch search;
+			for(auto& t : teams_)
+			{
+				for(auto& s : t)
+				{
+					if(s.client == &peer)
+					{
+						search.slot = &s;
+						return search;
+					}
+					if(++search.pos == max_duelists[search.team])
+						break;
+				}
+				search.team++;
+				search.pos = 0;
+			}
+			return search;
+		};
+		switch(signal.t_case())
+		{
+		case RoomSignal::Configuring::kUpdateDeck:
+		{
+			auto const search = find_peer_duelist_slot();
+			if(search.slot == nullptr)
+				break;
+			auto const& deck = signal.update_deck();
+			auto* e = event_();
+			auto* ds = e->mutable_configuring()->mutable_deck_status();
+			auto* de = ds->mutable_deck_error();
+			// TODO: Handle custom banlist.
+			if(deck_validator_->check(options_.banlist_id(), deck, *de))
+			{
+				ds->clear_deck_error();
+				search.slot->deck = deck;
+				search.slot->deck_valid = true;
+			}
+			else
+			{
+				search.slot->deck = {};
+				search.slot->deck_valid = false;
+			}
+			peer.send(*e);
+			break;
+		}
+		case RoomSignal::Configuring::kReadyStatus:
+		{
+			auto const search = find_peer_duelist_slot();
+			if(search.slot == nullptr)
+				break;
+			bool const new_status = signal.ready_status();
+			if(new_status == search.slot->ready)
+				break;
+			if(new_status && !search.slot->deck_valid)
+			{
+				// TODO: Report that you need a valid deck before readying.
+				break;
+			}
+			search.slot->ready = new_status;
+			auto* e = event_();
+			auto* msg = e->mutable_configuring()->mutable_update_duelist();
+			msg->set_team(search.team);
+			msg->set_pos(search.pos);
+			peer.fill_user(*msg->mutable_user());
+			msg->set_is_host(host_ == &peer);
+			msg->set_is_ready(new_status);
 			send_all_(*e);
 			break;
 		}
-		case RoomState::STATE_DECIDING_FIRST_TURN:
+		case RoomSignal::Configuring::kStartDueling:
 		{
-			auto get_team_leader = [&](uint32_t team) -> ClientType&
-			{
-				assert(team < teams_.size());
-				for(auto const& s : teams_[team])
-					if(s.client != nullptr)
-						return *s.client;
-				YGOPEN_UNREACHABLE();
-			};
-			auto send_choose_signal = [&](ClientType& client)
-			{
-				// TODO: 10s timer?
-				auto* e = event_();
-				e->mutable_deciding_first_turn()->set_decide_first_turn(true);
-				first_turn_decider_ = &client;
-				client.send(*e);
-			};
-			{
-				auto* e = event_();
-				e->mutable_deciding_first_turn()->mutable_entering_state();
-				send_all_(*e);
-			}
-			using FTDM = YGOpen::Proto::Room::FirstTurnDecideMethod;
-			switch(options_.ftdm())
-			{
-			case FTDM::FTDM_HOST_CHOOSES:
-				send_choose_signal(*host_);
+			if(&peer != host_)
 				break;
-			case FTDM::FTDM_RPS: // TODO: Implement
-				break;
-			case FTDM::FTDM_DICE:
+			auto const can_start = [&]() noexcept -> bool
 			{
-				auto roll_next_die = [&]() -> uint32_t
+				for(auto const& t : teams_)
 				{
-					return (rng_() % 6) + 1; // NOLINT: Six-sided die.
-				};
-				auto* e = event_();
-				auto* dftr = e->mutable_deciding_first_turn()->mutable_result();
-				auto* d = dftr->mutable_dice();
-				for(;;)
-				{
-					auto& r = *d->add_results();
-					r.set_team0(roll_next_die());
-					r.set_team1(roll_next_die());
-					if(r.team0() != r.team1())
+					bool has_atleast_one_duelist = false;
+					for(auto& s : t)
 					{
-						auto const winner = uint32_t{r.team0() < r.team1()};
-						dftr->set_team_going_first(winner);
-						break;
+						if(s.client != nullptr)
+						{
+							has_atleast_one_duelist = true;
+							if(!s.deck_valid || !s.ready)
+								return false;
+						}
 					}
+					if(!has_atleast_one_duelist)
+						return false;
 				}
-				send_all_(*e);
-				send_choose_signal(get_team_leader(dftr->team_going_first()));
-				break;
-			}
-			case FTDM::FTDM_COIN:
+				return true;
+			}();
+			if(!can_start)
 			{
-				auto* e = event_();
-				auto* dftr = e->mutable_deciding_first_turn()->mutable_result();
-				auto const winner = uint32_t{rng_() % 2U};
-				dftr->set_team_going_first(winner);
-				dftr->set_coin_result(
-					static_cast<
-						RoomEvent::DecidingFirstTurn::Result::CoinResult>(
-						winner));
-				send_all_(*e);
-				send_choose_signal(get_team_leader(winner));
+				// TODO: report?
 				break;
 			}
-			case FTDM::FirstTurnDecideMethod_INT_MIN_SENTINEL_DO_NOT_USE_:
-			case FTDM::FirstTurnDecideMethod_INT_MAX_SENTINEL_DO_NOT_USE_:
-				YGOPEN_UNREACHABLE();
-			}
+			enter_state_<DecidingFirstTurn>();
 			break;
 		}
-		case RoomState::State_INT_MIN_SENTINEL_DO_NOT_USE_:
-		case RoomState::State_INT_MAX_SENTINEL_DO_NOT_USE_:
-			YGOPEN_UNREACHABLE();
+		case RoomSignal::Configuring::T_NOT_SET:
+			break;
+		}
+	}
+
+	auto on_client_signal_(
+		DecidingFirstTurn& state, ClientType& peer,
+		YGOPEN_TYPEOF(state)::SignalType const& signal) noexcept -> void
+	{
+		using FTDM = YGOpen::Proto::Room::FirstTurnDecideMethod;
+		switch(signal.t_case())
+		{
+		case RoomSignal::DecidingFirstTurn::kTeamGoingFirst:
+		{
+			if(options_.ftdm() != FTDM::FTDM_HOST_CHOOSES || &peer != host_)
+				break;
+			auto const chosen_team = signal.team_going_first();
+			if(chosen_team > 1)
+				break;
+			auto* e = event_();
+			auto* r = e->mutable_deciding_first_turn()->mutable_result();
+			r->set_team_going_first(chosen_team);
+			send_all_(*e);
+			// TODO: Save who is going first to the dueling state.
+			// TODO: enter_state_(RoomState::STATE_DUELING);
+			break;
+		}
+		// TODO: Timeout signal
+		case RoomSignal::DecidingFirstTurn::T_NOT_SET:
+			break;
 		}
 	}
 };
