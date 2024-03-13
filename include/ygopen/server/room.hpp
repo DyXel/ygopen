@@ -229,7 +229,7 @@ private:
 	auto enter_state_(Args&&... args) noexcept -> void
 	{
 		auto const old_state_idx = states_.index();
-		auto state = states_.template emplace<T>(std::forward<Args>(args)...);
+		auto& state = states_.template emplace<T>(std::forward<Args>(args)...);
 		auto const new_state_idx = states_.index();
 		assert(old_state_idx != new_state_idx);
 		on_enter_state_(state);
@@ -464,9 +464,10 @@ private:
 			}
 			return search;
 		};
+		using SignalCases = YGOPEN_TYPEOF(signal)::TCase;
 		switch(signal.t_case())
 		{
-		case RoomSignal::Configuring::kUpdateDeck:
+		case SignalCases::kUpdateDeck:
 		{
 			auto const search = find_peer_duelist_slot();
 			if(search.slot == nullptr)
@@ -490,7 +491,7 @@ private:
 			peer.send(*e);
 			break;
 		}
-		case RoomSignal::Configuring::kReadyStatus:
+		case SignalCases::kReadyStatus:
 		{
 			auto const search = find_peer_duelist_slot();
 			if(search.slot == nullptr)
@@ -514,7 +515,7 @@ private:
 			send_all_(*e);
 			break;
 		}
-		case RoomSignal::Configuring::kStartDueling:
+		case SignalCases::kStartDueling:
 		{
 			if(&peer != host_)
 				break;
@@ -545,7 +546,7 @@ private:
 			enter_state_<DecidingFirstTurn>();
 			break;
 		}
-		case RoomSignal::Configuring::T_NOT_SET:
+		case SignalCases::T_NOT_SET:
 			break;
 		}
 	}
@@ -554,10 +555,12 @@ private:
 		DecidingFirstTurn& state, ClientType& peer,
 		YGOPEN_TYPEOF(state)::SignalType const& signal) noexcept -> void
 	{
+		// TODO: Setup timeouts
 		using FTDM = YGOpen::Proto::Room::FirstTurnDecideMethod;
+		using SignalCases = YGOPEN_TYPEOF(signal)::TCase;
 		switch(signal.t_case())
 		{
-		case RoomSignal::DecidingFirstTurn::kTeamGoingFirst:
+		case SignalCases::kTeamGoingFirst:
 		{
 			if(options_.ftdm() != FTDM::FTDM_HOST_CHOOSES || &peer != host_)
 				break;
@@ -572,8 +575,7 @@ private:
 			// TODO: enter_state_(RoomState::STATE_DUELING);
 			break;
 		}
-		// TODO: Timeout signal
-		case RoomSignal::DecidingFirstTurn::T_NOT_SET:
+		case SignalCases::T_NOT_SET:
 			break;
 		}
 	}
