@@ -10,11 +10,14 @@ protoc_gen = generator(protoc,
 
 ygopen_proto_src = files(
 	'banlist.proto',
+	'client_msg.proto',
 	'deck.proto',
 	'duel_answer.proto',
 	'duel_data.proto',
 	'duel_msg.proto',
 	'replay.proto',
+	'room.proto',
+	'server_msg.proto',
 	'user.proto',
 )
 

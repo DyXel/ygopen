@@ -41,7 +41,7 @@ message DeckLimits
 	message Limit
 	{
 		uint32 min = 1;
-		// NOTE: A negative number should be a implementation defined limit.
+		// NOTE: A negative number should be a implementation-defined limit.
 		int32 max = 2;
 	}
 	Limit main  = 1;

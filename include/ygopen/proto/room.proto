@@ -1,0 +1,202 @@
+/*
+ * Copyright (c) 2024, Dylam De La Torre <dyxel04@gmail.com>
+ *
+ * SPDX-License-Identifier: AGPL-3.0-or-later
+ */
+syntax = "proto3";
+
+// TODO: Documentation
+
+package YGOpen.Proto.Room;
+
+import "banlist.proto";
+import "deck.proto";
+import "user.proto";
+
+option cc_enable_arenas = true;
+
+enum State
+{
+	// Transitive state, when the room is being constructed or closing.
+	STATE_MONOSTATE = 0;
+	// Main "Idle" state, where duelists can ready up and where the host can
+	// change settings among other things.
+	STATE_CONFIGURING = 1;
+	// State where team leaders can decide who goes first.
+	STATE_DECIDING_FIRST_TURN = 2;
+	// State during which duelists conduct a single duel.
+	STATE_DUELING = 3;
+}
+
+enum FirstTurnDecideMethod
+{
+	// Room's host chooses which team goes first directly.
+	FTDM_HOST_CHOOSES = 0;
+	// Rock paper scissors, winner decides.
+	FTDM_RPS = 1;
+	// Each team rolls a six-sided die, higher roll wins.
+	FTDM_DICE = 2;
+	// A coin is tossed: Heads == team0 wins, Tails == team1 wins.
+	FTDM_COIN = 3;
+}
+
+message Duelist
+{
+	uint32 team   = 1;
+	uint32 pos    = 2;
+	User user     = 3;
+	bool is_host  = 4;
+	bool is_ready = 5;
+}
+
+message Options
+{
+	// Minimum 1 duelist per team, must have exactly 2 values (one for each
+	// team). Values are clamped to minimum and implementation-defined maximum.
+	repeated uint32 max_duelists = 1;
+
+	DeckLimits deck_limits       = 2;
+
+	oneof banlist
+	{
+		string banlist_id        = 3;
+		Banlist custom_banlist   = 4;
+	}
+
+	FirstTurnDecideMethod ftdm = 5;
+
+	// TODO: Duel options
+}
+
+message Event
+{
+	message Configuring
+	{
+		message EnteringState
+		{
+			Options options           = 1;
+			repeated Duelist duelists = 2;
+			uint32 spectator_count    = 3;
+			// TODO: Send room settings (don't remember what this means)
+		}
+
+		message DeckStatus
+		{
+			DeckError deck_error = 1;
+		}
+
+		oneof t
+		{
+			EnteringState entering_state = 1;
+			Duelist duelist_enters       = 2;
+			Duelist update_duelist       = 3;
+			DeckStatus deck_status       = 4;
+		}
+	}
+
+	message DecidingFirstTurn
+	{
+		message EnteringState
+		{
+			// TODO: Do we really need this?
+		}
+
+		message Result
+		{
+			// From core and card textures:
+			// invalid = 0
+			// scissors = 1
+			// rock = 2
+			// paper = 3
+			// invalid = 4
+			message RPS {}  // TODO
+
+			message Dice
+			{
+				message ResultPair
+				{
+					// NOTE: Results are from 1 to 6 (so 1-indexed),
+					//       this matches the values from the core.
+					uint32 team0 = 1;
+					uint32 team1 = 2;
+				}
+
+				repeated ResultPair results = 1;
+			}
+
+			// TODO: These match values from the core, move them common place
+			//       between Duel and this.
+			enum CoinResult
+			{
+				COIN_RESULT_HEADS = 0; // team0
+				COIN_RESULT_TAILS = 1; // team1
+			}
+
+			// Either a team (0 or 1), any other value indicates a draw.
+			uint32 team_going_first = 1;
+
+			oneof t
+			{
+				RPS rps                = 2;
+				Dice dice              = 3;
+				CoinResult coin_result = 4;
+			}
+		}
+
+		oneof t
+		{
+			EnteringState entering_state = 1;
+			bool decide_first_turn       = 2;
+			Result result                = 3;
+		}
+	}
+
+	message Dueling
+	{
+		message EnteringState
+		{
+			// TODO
+		}
+
+		oneof t
+		{
+			EnteringState entering_state = 1;
+		}
+	}
+
+	oneof t
+	{
+		Configuring configuring               = 1;
+		DecidingFirstTurn deciding_first_turn = 2;
+		Dueling dueling                       = 3;
+		uint32 spectator_count                = 4;
+	}
+}
+
+message Signal
+{
+	message Configuring
+	{
+		oneof t
+		{
+			Deck update_deck   = 1;
+			bool ready_status  = 2;
+			bool start_dueling = 3;
+		}
+	}
+
+	message DecidingFirstTurn
+	{
+		oneof t
+		{
+			// TODO: RPS Choice
+			uint32 team_going_first = 1;
+		}
+	}
+
+	oneof t
+	{
+		Configuring configuring               = 1;
+		DecidingFirstTurn deciding_first_turn = 2;
+	}
+}
