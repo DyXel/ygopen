@@ -1,0 +1,29 @@
+/*
+ * Copyright (c) 2024, Dylam De La Torre <dyxel04@gmail.com>
+ *
+ * SPDX-License-Identifier: AGPL-3.0-or-later
+ */
+syntax = "proto3";
+
+// TODO: Documentation; Client to Server message.
+
+package YGOpen.Proto;
+
+import "room.proto";
+
+option cc_enable_arenas = true;
+
+message ClientMsg
+{
+	message IdSignal
+	{
+		string name = 1;
+// 		uint32 version = ?;
+	}
+
+	oneof t
+	{
+		IdSignal id_signal      = 1;
+		Room.Signal room_signal = 2;
+	}
+}
