@@ -453,4 +453,56 @@ TYPED_TEST(FrameDeathTest, BadAccessViaCardDies)
 	EXPECT_DEATH({ (void)frame.card(place); }, "");
 }
 
+TYPED_TEST(FrameDeathTest, BadPileAccessDies)
+{
+	// TODO
+}
+
+TYPED_TEST(FrameDeathTest, BadZoneAccessDies)
+{
+	// TODO
+}
+
+TYPED_TEST(FrameDeathTest, BadHasCardUsageDies)
+{
+	// TODO
+}
+
+TYPED_TEST(FrameDeathTest, BadAddCardUsageDies)
+{
+	// Adding card to a zone that is already occupied
+	// TODO
+}
+
+TYPED_TEST(FrameDeathTest, BadRemoveCardUsageDies)
+{
+	// TODO
+}
+
+TYPED_TEST(FrameDeathTest, BadMoveCardUsageDies)
+{
+	// Moving card to a zone that is already occupied
+	// TODO
+}
+
+TYPED_TEST(FrameDeathTest, BadSwapCardUsageDies)
+{
+	// TODO
+}
+
+TYPED_TEST(FrameDeathTest, BadPileResizeUsageDies)
+{
+	// TODO
+}
+
+TYPED_TEST(FrameDeathTest, BadPileSpliceUsageDies)
+{
+	// TODO
+}
+
+TYPED_TEST(FrameDeathTest, BadPileSwapUsageDies)
+{
+	// TODO
+}
+
 } // namespace

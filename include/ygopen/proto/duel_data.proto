@@ -11,6 +11,14 @@ package YGOpen.Proto.Duel;
 
 option cc_enable_arenas = true;
 
+// TODO: Initial idea for versioning, this doesn't look too good :/
+// enum ProtocolVersion
+// {
+// 	DUEL_PROTOCOL_VERSION_MAJOR = 1,
+// 	DUEL_PROTOCOL_VERSION_MINOR = 0,
+// 	DUEL_PROTOCOL_VERSION_PATCH = 0,
+// }
+
 enum ChainStatus
 {
 	// NOTE: CHAINING is never actually sent, but it's the default status when
