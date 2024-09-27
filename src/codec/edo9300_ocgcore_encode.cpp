@@ -679,7 +679,7 @@ auto encode_one(google::protobuf::Arena& arena, IEncodeContext& context,
 #define LP(t)                                                  \
 	do                                                         \
 	{                                                          \
-		auto* lp = create_event()->mutable_lp();               \
+		auto* lp = create_event() -> mutable_lp();             \
 		lp->set_controller(read_con(data));                    \
 		lp->set_##t(read<uint32_t>(data, "lp amount to " #t)); \
 	} while(0)
@@ -747,7 +747,7 @@ auto encode_one(google::protobuf::Arena& arena, IEncodeContext& context,
 #define RESULT(r, t)                                                        \
 	do                                                                      \
 	{                                                                       \
-		auto* res = create_event()->mutable_result()->mutable_##r();        \
+		auto* res = create_event() -> mutable_result() -> mutable_##r();    \
 		res->set_actor(read_con(data));                                     \
 		const auto count = read<CSCount>(data, #r " count");                \
 		for(CSCount i = 0; i < count; i++)                                  \
