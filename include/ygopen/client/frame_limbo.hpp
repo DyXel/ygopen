@@ -42,8 +42,8 @@ public:
 		limbo_cards_[op_] = &BaseFrame::card_erase(place);
 	}
 
-	constexpr auto pile_resize(PlaceType const& place, size_t count) noexcept
-		-> void
+	constexpr auto pile_resize(PlaceType const& place,
+	                           size_t count) noexcept -> void
 	{
 		assert(is_pile(place));
 		bool processing = advance_op_();
@@ -96,7 +96,8 @@ public:
 		regress_op_();
 	}
 
-	constexpr auto undo_pile_resize(PlaceType const& place, [[maybe_unused]] size_t count) noexcept -> void
+	constexpr auto undo_pile_resize(
+		PlaceType const& place, [[maybe_unused]] size_t count) noexcept -> void
 	{
 		assert(is_pile(place));
 		auto& p = this->pile(place);
@@ -124,14 +125,14 @@ public:
 
 	template<typename InputIt>
 	constexpr auto undo_card_shuffle(InputIt previous, InputIt current,
-	                            size_t count) noexcept -> void
+	                                 size_t count) noexcept -> void
 	{
 		// TODO
 	}
 
 	constexpr auto undo_pile_splice(PlaceType const& from, size_t count,
-	                           PlaceType const& to, bool reverse) noexcept
-		-> void
+	                                PlaceType const& to,
+	                                bool reverse) noexcept -> void
 	{
 		// TODO: Maybe not needed?
 	}

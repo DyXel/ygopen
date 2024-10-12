@@ -55,8 +55,8 @@ auto operator~(QueryCacheHit rhs) -> QueryCacheHit;
 auto operator|=(QueryCacheHit& lhs, QueryCacheHit rhs) -> QueryCacheHit&;
 auto operator!(QueryCacheHit rhs) -> bool;
 template<bool use_cache = false, typename Frame>
-auto parse_query(Frame& frame, Proto::Duel::Msg::Query const& query)
-	-> QueryCacheHit;
+auto parse_query(Frame& frame,
+                 Proto::Duel::Msg::Query const& query) -> QueryCacheHit;
 
 // from #include <ygopen/client/undo_parse_event.hpp>
 template<typename Board>
@@ -120,8 +120,8 @@ auto decode_one_answer(Proto::Duel::Msg_Request const& request,
                        std::vector<uint8_t>& out) -> void;
 
 // from #include <ygopen/codec/edo9300_ocgcore_encode.hpp>
-auto encode_one_query(uint8_t const* data, Proto::Duel::Msg_Query_Data& q)
-	-> EncodeOneQueryResult;
+auto encode_one_query(uint8_t const* data,
+                      Proto::Duel::Msg_Query_Data& q) -> EncodeOneQueryResult;
 auto encode_one(google::protobuf::Arena& arena, IEncodeContext& context,
                 uint8_t const* data) -> EncodeOneResult;
 

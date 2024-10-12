@@ -76,8 +76,8 @@ constexpr auto log(Args&&... args) noexcept -> void
 #endif // YGOPEN_ENCODER_DEBUG
 
 template<typename... Args>
-constexpr auto skip(uint8_t const*& ptr, size_t bytes, Args&&... args) noexcept
-	-> void
+constexpr auto skip(uint8_t const*& ptr, size_t bytes,
+                    Args&&... args) noexcept -> void
 {
 	log("skipping ", bytes, " bytes. ", std::forward<Args>(args)...);
 	ptr += bytes; // NOLINT
@@ -92,8 +92,8 @@ constexpr auto skip(uint8_t const*& ptr, Args&&... args) noexcept -> void
 }
 
 template<typename T, typename... Args>
-[[nodiscard]] constexpr auto read(uint8_t const*& ptr, Args&&... args) noexcept
-	-> T
+[[nodiscard]] constexpr auto read(uint8_t const*& ptr,
+                                  Args&&... args) noexcept -> T
 {
 	log(std::forward<Args>(args)...);
 	T value{};
@@ -264,16 +264,16 @@ auto read_card_list(uint8_t const*& ptr, Next next, Post post) noexcept -> void
 }
 
 template<typename... Args>
-constexpr auto back(uint8_t const*& ptr, size_t bytes, Args&&... args) noexcept
-	-> void
+constexpr auto back(uint8_t const*& ptr, size_t bytes,
+                    Args&&... args) noexcept -> void
 {
 	log("going back ", bytes, " bytes. ", std::forward<Args>(args)...);
 	ptr -= bytes; // NOLINT
 }
 
 template<typename Next>
-inline auto unpack_zones(CField zones, CPlayer invert, Next next) noexcept
-	-> void
+inline auto unpack_zones(CField zones, CPlayer invert,
+                         Next next) noexcept -> void
 {
 	static constexpr CField FIELD_HALF = 16U;
 	static constexpr CField FIELD_MZONE_COUNT = 7U; // 5 MMZ + 2 EMZ.
@@ -479,19 +479,19 @@ auto encode_one(google::protobuf::Arena& arena, IEncodeContext& context,
 	auto create_event = [&]() -> Msg::Event*
 	{
 		result.state = EncodeOneResult::State::OK;
-		result.msg = Arena::CreateMessage<Msg>(&arena);
+		result.msg = Arena::Create<Msg>(&arena);
 		return result.msg->mutable_event();
 	};
 	auto create_queries = [&]() -> RepeatedPtrField<Msg::Query>*
 	{
 		result.state = EncodeOneResult::State::OK;
-		result.msg = Arena::CreateMessage<Msg>(&arena);
+		result.msg = Arena::Create<Msg>(&arena);
 		return result.msg->mutable_queries();
 	};
 	auto create_request = [&]() -> Msg::Request*
 	{
 		result.state = EncodeOneResult::State::OK;
-		result.msg = Arena::CreateMessage<Msg>(&arena);
+		result.msg = Arena::Create<Msg>(&arena);
 		auto* request = result.msg->mutable_request();
 		request->set_replier(read_con(data));
 		return request;
@@ -512,7 +512,7 @@ auto encode_one(google::protobuf::Arena& arena, IEncodeContext& context,
 	auto add_selected = [&]()
 	{
 		auto* selection = create_event()->mutable_meta()->mutable_selection();
-		const auto count = read<CCount>(data, ".size()");
+		auto const count = read<CCount>(data, ".size()");
 		for(CCount i = 0; i < count; i++)
 			read_loc_info(data, *selection->add_selected_places());
 	};
@@ -679,7 +679,7 @@ auto encode_one(google::protobuf::Arena& arena, IEncodeContext& context,
 #define LP(t)                                                  \
 	do                                                         \
 	{                                                          \
-		auto* lp = create_event() -> mutable_lp();             \
+		auto* lp = create_event()->mutable_lp();               \
 		lp->set_controller(read_con(data));                    \
 		lp->set_##t(read<uint32_t>(data, "lp amount to " #t)); \
 	} while(0)
@@ -747,7 +747,7 @@ auto encode_one(google::protobuf::Arena& arena, IEncodeContext& context,
 #define RESULT(r, t)                                                        \
 	do                                                                      \
 	{                                                                       \
-		auto* res = create_event() -> mutable_result() -> mutable_##r();    \
+		auto* res = create_event()->mutable_result()->mutable_##r();        \
 		res->set_actor(read_con(data));                                     \
 		const auto count = read<CSCount>(data, #r " count");                \
 		for(CSCount i = 0; i < count; i++)                                  \
@@ -859,7 +859,7 @@ auto encode_one(google::protobuf::Arena& arena, IEncodeContext& context,
 						continue;
 					skip<CSPos>(data, "position (current)");
 					add_one(loc, seq, OSEQ_INVALID);
-					const auto mats = read<CCount>(data, "xyz mats count");
+					auto const mats = read<CCount>(data, "xyz mats count");
 					for(CCount oseq = 0U; oseq < mats; oseq++)
 						add_one(loc, seq, static_cast<COSeq>(oseq));
 				}

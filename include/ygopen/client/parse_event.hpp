@@ -77,8 +77,8 @@ concept Board = requires(T b, Duel::Controller c)
 #endif
 
 template<YGOPEN_CONCEPT(Board)>
-auto parse_event(Board& board, Proto::Duel::Msg::Event const& event) noexcept
-	-> void
+auto parse_event(Board& board,
+                 Proto::Duel::Msg::Event const& event) noexcept -> void
 {
 	using namespace YGOpen::Duel;
 	using namespace YGOpen::Proto::Duel;

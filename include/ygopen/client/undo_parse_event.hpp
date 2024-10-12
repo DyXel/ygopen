@@ -153,7 +153,6 @@ auto undo_parse_event(UndoableBoard& board,
 	}
 	case Msg::Event::kNextTurn:
 	{
-		auto const next_turn = uint32_t(board.turn()) + 1;
 		board.turn().undo();
 		board.turn_controller().undo();
 		break;
@@ -178,7 +177,8 @@ auto undo_parse_event(UndoableBoard& board,
 		case Msg::Event::Pile::kSplice:
 		{
 			for(auto const& op : reverse(pile.splice().ops()))
-				frame.undo_pile_splice(op.from(), op.count(), op.to(), op.reverse());
+				frame.undo_pile_splice(op.from(), op.count(), op.to(),
+				                       op.reverse());
 			break;
 		}
 		case Msg::Event::Pile::kExchange:

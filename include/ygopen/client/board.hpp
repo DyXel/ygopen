@@ -44,7 +44,7 @@ public:
 		, turn_controller_()
 		, lp_()
 		, phase_()
-		, blocked_zones_(){};
+		, blocked_zones_() {};
 
 	// Const getters.
 

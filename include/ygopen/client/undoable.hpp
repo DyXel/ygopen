@@ -46,7 +46,7 @@ public:
 	// FIXME: Too lazy to do something else, should probably be optimized
 	//        and/or be its own template type or something...
 
-	template<typename ...Args>
+	template<typename... Args>
 	constexpr auto assign(Args&&... args) noexcept -> auto
 	{
 		if(current_ == --values_.cend())
@@ -55,31 +55,26 @@ public:
 		return *this;
 	};
 
-	template<typename ...Args>
-	constexpr auto push_back(Args&&... args) noexcept -> auto
-	{
+	template<typename... Args>
+	constexpr auto push_back(Args&&... args) noexcept -> auto {
 		// TODO
 	};
 
-	constexpr auto pop_back() noexcept -> auto
-	{
+	constexpr auto pop_back() noexcept -> auto {
 		// TODO
 	};
 
-	template<typename ...Args>
-	constexpr auto undo_assign(Args&&... args) noexcept -> auto
-	{
+	template<typename... Args>
+	constexpr auto undo_assign(Args&&... args) noexcept -> auto {
 		// TODO
 	};
 
-	template<typename ...Args>
-	constexpr auto undo_push_back(Args&&... args) noexcept -> auto
-	{
+	template<typename... Args>
+	constexpr auto undo_push_back(Args&&... args) noexcept -> auto {
 		// TODO
 	};
 
-	constexpr auto undo_pop_back() noexcept -> auto
-	{
+	constexpr auto undo_pop_back() noexcept -> auto {
 		// TODO
 	};
 
