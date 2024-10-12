@@ -42,8 +42,8 @@ public:
 		limbo_cards_[op_] = &BaseFrame::card_erase(place);
 	}
 
-	constexpr auto pile_resize(PlaceType const& place, size_t count) noexcept
-		-> void
+	constexpr auto pile_resize(PlaceType const& place,
+	                           size_t count) noexcept -> void
 	{
 		assert(is_pile(place));
 		bool processing = advance_op_();
@@ -80,7 +80,7 @@ public:
 
 	// Undo specialized operations.
 
-	constexpr auto card_undo_add(PlaceType const& place) noexcept -> Card&
+	constexpr auto undo_card_add(PlaceType const& place) noexcept -> Card&
 	{
 		assert(this->has_card(place));
 		auto& c = BaseFrame::card_erase(place);
@@ -89,14 +89,15 @@ public:
 		return c;
 	}
 
-	constexpr auto card_undo_remove(PlaceType const& place) noexcept -> void
+	constexpr auto undo_card_remove(PlaceType const& place) noexcept -> void
 	{
 		assert(this->has_card(place));
 		BaseFrame::card_insert(place, *limbo_cards_[op_]);
 		regress_op_();
 	}
 
-	constexpr auto pile_undo_resize(PlaceType const& place) noexcept -> void
+	constexpr auto undo_pile_resize(
+		PlaceType const& place, [[maybe_unused]] size_t count) noexcept -> void
 	{
 		assert(is_pile(place));
 		auto& p = this->pile(place);
@@ -120,6 +121,20 @@ public:
 	{
 		swap_clear_op_(limbo_clear_ops_[op_]);
 		regress_op_();
+	}
+
+	template<typename InputIt>
+	constexpr auto undo_card_shuffle(InputIt previous, InputIt current,
+	                                 size_t count) noexcept -> void
+	{
+		// TODO
+	}
+
+	constexpr auto undo_pile_splice(PlaceType const& from, size_t count,
+	                                PlaceType const& to,
+	                                bool reverse) noexcept -> void
+	{
+		// TODO: Maybe not needed?
 	}
 
 private:
@@ -153,7 +168,11 @@ private:
 		return (op_++ == processed_op_) ? (processed_op_++, true) : false;
 	}
 
-	constexpr auto regress_op_() noexcept -> void { op_--; }
+	constexpr auto regress_op_() noexcept -> void
+	{
+		assert(op_ > 0);
+		op_--;
+	}
 
 	constexpr auto swap_clear_op_(ClearOp& clear_op) noexcept -> void
 	{

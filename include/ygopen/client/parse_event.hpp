@@ -1,20 +1,84 @@
 /*
- * Copyright (c) 2021, Dylam De La Torre <dyxel04@gmail.com>
+ * Copyright (c) 2024, Dylam De La Torre <dyxel04@gmail.com>
  *
  * SPDX-License-Identifier: AGPL-3.0-or-later
  */
 #ifndef YGOPEN_CLIENT_PARSE_EVENT_HPP
 #define YGOPEN_CLIENT_PARSE_EVENT_HPP
-#include <utility>
+#include <ygopen/detail/config.hpp>
 #include <ygopen/duel/constants/controller.hpp>
 #include <ygopen/proto/duel/msg.hpp>
 
 namespace YGOpen::Client
 {
 
-template<typename Board>
-auto parse_event(Board& board, Proto::Duel::Msg::Event const& event) noexcept
-	-> void
+#ifdef YGOPEN_HAS_CONCEPTS
+template<typename T, typename Concrete>
+concept AssignableFromRepeated =
+	requires(T t, google::protobuf::RepeatedPtrField<Concrete> m)
+{
+	t.assign(m.begin(), m.end());
+};
+
+template<typename T, typename Concrete>
+concept PushableAndPopable = requires(T t, Concrete const& c)
+{
+	t.push_back(c);
+	t.pop_back();
+};
+
+template<typename T, typename Concrete>
+concept GettableAndSettable = requires(T t, Concrete c)
+{
+	Concrete(t);
+	t = c;
+};
+
+template<typename T>
+concept Frame = requires(T f, Proto::Duel::Place const& p)
+{
+	f.card_add(p);
+	f.card_move(p, p);
+	f.card_remove(p);
+	f.card_swap(p, p);
+	f.clear();
+	f.pile_resize(p, size_t{});
+	f.pile_splice(p, size_t{}, p, bool{});
+};
+
+template<typename T>
+concept Board = requires(T b, Duel::Controller c)
+{
+	{
+		b.blocked_zones()
+	} noexcept -> AssignableFromRepeated<Proto::Duel::Place>;
+	{
+		b.chain_stack()
+	} noexcept -> AssignableFromRepeated<Proto::Duel::Chain>;
+	{
+		b.chain_stack()
+	} noexcept -> PushableAndPopable<Proto::Duel::Chain>;
+	{
+		b.frame()
+	} noexcept -> Frame;
+	{
+		b.lp(c)
+	} noexcept -> GettableAndSettable<uint32_t>;
+	{
+		b.phase()
+	} noexcept -> GettableAndSettable<Duel::Phase>;
+	{
+		b.turn()
+	} noexcept -> GettableAndSettable<uint32_t>;
+	{
+		b.turn_controller()
+	} noexcept -> GettableAndSettable<Duel::Controller>;
+};
+#endif
+
+template<YGOPEN_CONCEPT(Board)>
+auto parse_event(Board& board,
+                 Proto::Duel::Msg::Event const& event) noexcept -> void
 {
 	using namespace YGOpen::Duel;
 	using namespace YGOpen::Proto::Duel;
@@ -41,11 +105,11 @@ auto parse_event(Board& board, Proto::Duel::Msg::Event const& event) noexcept
 		{
 			auto const& state = eb.state();
 			if(auto tc = state.turn_counter(); tc >= 0)
-				board.turn().set(static_cast<uint32_t>(tc));
+				board.turn() = static_cast<uint32_t>(tc);
 			for(auto con : {CONTROLLER_0, CONTROLLER_1})
-				board.lp(con).set(state.lps(static_cast<int>(con)));
+				board.lp(con) = state.lps(static_cast<int>(con));
 			auto const& chains = state.chains();
-			board.chain_stack().set({chains.cbegin(), chains.cend()});
+			board.chain_stack().assign(chains.cbegin(), chains.cend());
 			frame.clear();
 			for(auto const& place : state.add().places())
 				frame.card_add(place);
@@ -108,21 +172,12 @@ auto parse_event(Board& board, Proto::Duel::Msg::Event const& event) noexcept
 		{
 		case Msg::Event::ChainStack::kPush:
 		{
-			auto const& prev_chains = board.chain_stack().get();
-			std::vector<Proto::Duel::Chain> new_chains{prev_chains.size() + 1U};
-			std::copy(prev_chains.cbegin(), prev_chains.cend(),
-			          new_chains.begin());
-			new_chains.back() = chain_stack.push();
-			board.chain_stack().set(std::move(new_chains));
+			board.chain_stack().push_back(chain_stack.push());
 			break;
 		}
 		case Msg::Event::ChainStack::kPop:
 		{
-			auto const& prev_chains = board.chain_stack().get();
-			std::vector<Proto::Duel::Chain> new_chains{prev_chains.size() - 1U};
-			std::copy(prev_chains.cbegin(), prev_chains.cend() - 1U,
-			          new_chains.begin());
-			board.chain_stack().set(std::move(new_chains));
+			board.chain_stack().pop_back();
 			break;
 		}
 		default:
@@ -132,44 +187,47 @@ auto parse_event(Board& board, Proto::Duel::Msg::Event const& event) noexcept
 	}
 	case Msg::Event::kNextTurn:
 	{
-		board.turn().set(board.turn().get() + 1);
-		board.turn_controller().set(Controller{event.next_turn()});
+		auto const next_turn = uint32_t(board.turn()) + 1;
+		board.turn() = next_turn;
+		board.turn_controller() = Controller{event.next_turn()};
 		break;
 	}
 	case Msg::Event::kLp:
 	{
 		auto const& lp = event.lp();
 		auto& blp = board.lp(Controller{lp.controller()});
+		auto lpv = uint32_t(board.lp(Controller{lp.controller()}));
 		switch(lp.t_case())
 		{
 		case Msg::Event::LP::kBecome:
 		{
-			blp.set(lp.become());
+			lpv = lp.become();
 			break;
 		}
 		case Msg::Event::LP::kDamage:
 		{
-			blp.set((blp.get() < lp.damage()) ? 0 : blp.get() - lp.damage());
+			lpv = (lpv < lp.damage()) ? 0 : lpv - lp.damage();
 			break;
 		}
 		case Msg::Event::LP::kPay:
 		{
-			blp.set((blp.get() < lp.pay()) ? 0 : blp.get() - lp.pay());
+			lpv = (lpv < lp.pay()) ? 0 : lpv - lp.pay();
 			break;
 		}
 		case Msg::Event::LP::kRecover:
 		{
-			blp.set(blp.get() + lp.recover());
+			lpv = lpv + lp.recover();
 			break;
 		}
 		default:
 			break;
 		}
+		blp = lpv;
 		break;
 	}
 	case Msg::Event::kNextPhase:
 	{
-		board.phase().set(Phase{event.next_phase()});
+		board.phase() = Phase{event.next_phase()};
 		break;
 	}
 	case Msg::Event::kPile:
@@ -198,7 +256,7 @@ auto parse_event(Board& board, Proto::Duel::Msg::Event const& event) noexcept
 	case Msg::Event::kZoneBlock:
 	{
 		auto const& zones = event.zone_block().zones();
-		board.blocked_zones().set({zones.cbegin(), zones.cend()});
+		board.blocked_zones().assign(zones.cbegin(), zones.cend());
 		break;
 	}
 	case Msg::Event::kFinish:

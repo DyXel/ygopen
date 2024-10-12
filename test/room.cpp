@@ -178,9 +178,8 @@ struct TestRoomTraits
 
 using TestRoom = YGOpen::Server::BasicRoom<TestRoomTraits>;
 
-auto default_room_with_host(Client& c,
-                            YGOpen::Proto::Room::Options options) noexcept
-	-> TestRoom
+auto default_room_with_host(
+	Client& c, YGOpen::Proto::Room::Options options) noexcept -> TestRoom
 {
 	return TestRoom{dv, cdf, rng, c, std::move(options)};
 }
@@ -335,7 +334,7 @@ TEST(ServerRoom, ConfiguringStateJoining3V3Works)
 		{
 			ASSERT_TRUE(e.has_configuring());
 			ASSERT_TRUE(e.configuring().has_duelist_enters());
-			const auto& de = e.configuring().duelist_enters();
+			auto const& de = e.configuring().duelist_enters();
 			EXPECT_EQ(de.team(), team);
 			EXPECT_EQ(de.pos(), pos);
 			EXPECT_EQ(de.user().name(), name);
@@ -449,7 +448,7 @@ TEST(ServerRoom, ConfiguringReadyingWithValidDeckWorks)
 		{
 			ASSERT_TRUE(e.has_configuring());
 			ASSERT_TRUE(e.configuring().has_update_duelist());
-			const auto& ud = e.configuring().update_duelist();
+			auto const& ud = e.configuring().update_duelist();
 			EXPECT_EQ(ud.team(), 0);
 			EXPECT_EQ(ud.pos(), 0);
 			EXPECT_TRUE(ud.is_ready());
@@ -462,7 +461,7 @@ TEST(ServerRoom, ConfiguringReadyingWithValidDeckWorks)
 		{
 			ASSERT_TRUE(e.has_configuring());
 			ASSERT_TRUE(e.configuring().has_update_duelist());
-			const auto& ud = e.configuring().update_duelist();
+			auto const& ud = e.configuring().update_duelist();
 			EXPECT_FALSE(ud.is_ready());
 		});
 }
@@ -488,9 +487,9 @@ TEST(ServerRoom, ConfiguringNonHostReadyingWorks)
 			ASSERT_TRUE(e.has_configuring());
 			ASSERT_TRUE(e.configuring().has_entering_state());
 			ASSERT_TRUE(e.configuring().entering_state().has_options());
-			const auto& ds = e.configuring().entering_state().duelists();
+			auto const& ds = e.configuring().entering_state().duelists();
 			ASSERT_EQ(ds.size(), 1);
-			const auto& d = ds[0];
+			auto const& d = ds[0];
 			EXPECT_EQ(d.team(), 0);
 			EXPECT_EQ(d.pos(), 0);
 			EXPECT_TRUE(d.has_user());
@@ -507,7 +506,7 @@ TEST(ServerRoom, ConfiguringNonHostReadyingWorks)
 		{
 			ASSERT_TRUE(e.has_configuring());
 			ASSERT_TRUE(e.configuring().has_update_duelist());
-			const auto& ud = e.configuring().update_duelist();
+			auto const& ud = e.configuring().update_duelist();
 			EXPECT_TRUE(ud.has_user());
 			EXPECT_EQ(ud.user().name(), "Client2");
 			EXPECT_TRUE(ud.is_ready());
@@ -597,7 +596,7 @@ TEST_F(ServerRoomDecidingFirstTurn, HostDecidingWorks)
 		{
 			ASSERT_TRUE(e.has_deciding_first_turn());
 			ASSERT_TRUE(e.deciding_first_turn().has_result());
-			const auto& result = e.deciding_first_turn().result();
+			auto const& result = e.deciding_first_turn().result();
 			EXPECT_EQ(result.team_going_first(), 1);
 		});
 }
@@ -621,7 +620,7 @@ TEST_F(ServerRoomDecidingFirstTurn, DiceRollWorks)
 		{
 			ASSERT_TRUE(e.has_deciding_first_turn());
 			ASSERT_TRUE(e.deciding_first_turn().has_result());
-			const auto& result = e.deciding_first_turn().result();
+			auto const& result = e.deciding_first_turn().result();
 			ASSERT_TRUE(result.has_dice());
 			auto const& dice_results = result.dice().results();
 			ASSERT_EQ(dice_results.size(), 4);
@@ -649,7 +648,7 @@ TEST_F(ServerRoomDecidingFirstTurn, CoinTossWorks)
 		{
 			ASSERT_TRUE(e.has_deciding_first_turn());
 			ASSERT_TRUE(e.deciding_first_turn().has_result());
-			const auto& result = e.deciding_first_turn().result();
+			auto const& result = e.deciding_first_turn().result();
 			ASSERT_TRUE(result.has_coin_result());
 			auto const coin_result = result.coin_result();
 			EXPECT_EQ(coin_result,
