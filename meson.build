@@ -3,11 +3,12 @@ project('ygopen', 'cpp',
 	default_options : 'cpp_std=c++17'
 )
 
-pb_optimize_for = get_option('pb_optimize_for')
+unittests_opt       = get_option('unittests')
+pb_optimize_for_opt = get_option('pb_optimize_for')
 
-gtest_dep = dependency('gtest', main : true, required : false)
+gtest_dep    = dependency('gtest', main : true, required : unittests_opt)
 protobuf_dep = dependency(
-	pb_optimize_for == 'lite' ? 'protobuf-lite' : 'protobuf',
+	pb_optimize_for_opt == 'lite' ? 'protobuf-lite' : 'protobuf',
 	version : '>=3.8.0',
 )
 
@@ -32,21 +33,22 @@ ygopen_dep = declare_dependency(
 )
 meson.override_dependency('ygopen', ygopen_dep)
 
-ygopen_unit_tests_src = files(
-	'test/banlist.cpp',
-	'test/bit.cpp',
-	'test/board.cpp',
-	'test/deck.cpp',
-	'test/frame.cpp',
-	'test/parse_event.cpp',
-	'test/place.cpp',
-	'test/room.cpp',
-	'test/undoable.cpp',
-)
+if unittests_opt.require(gtest_dep.found()).allowed()
+	ygopen_unit_tests_src = files(
+		'test/banlist.cpp',
+		'test/bit.cpp',
+		'test/board.cpp',
+		'test/deck.cpp',
+		'test/frame.cpp',
+		'test/parse_event.cpp',
+		'test/place.cpp',
+		'test/room.cpp',
+		'test/undoable.cpp',
+	)
 
-ygopen_unit_tests_exe = executable('ygopen_ut', ygopen_unit_tests_src,
-	build_by_default : false,
-	dependencies : [gtest_dep, ygopen_dep]
-)
+	ygopen_unit_tests_exe = executable('ygopen_ut', ygopen_unit_tests_src,
+		dependencies : [gtest_dep, ygopen_dep]
+	)
 
-test('ygopen unit tests', ygopen_unit_tests_exe)
+	test('ygopen unit tests', ygopen_unit_tests_exe)
+endif

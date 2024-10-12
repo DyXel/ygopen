@@ -1,3 +1,4 @@
+option('unittests', type : 'feature')
 option('pb_optimize_for',
 	type : 'combo',
 	choices : ['speed', 'code_size', 'lite'],

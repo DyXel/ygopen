@@ -3,7 +3,7 @@ protoc_gen = generator(protoc,
 	output : ['@BASENAME@.pb.cc', '@BASENAME@.pb.h'],
 	arguments : [
 		'--proto_path=@CURRENT_SOURCE_DIR@',
-		'--cpp_out=@0@:@BUILD_DIR@'.format(pb_optimize_for),
+		'--cpp_out=@0@:@BUILD_DIR@'.format(pb_optimize_for_opt),
 		'@INPUT@',
 	]
 )
