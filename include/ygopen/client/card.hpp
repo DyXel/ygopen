@@ -20,7 +20,6 @@ concept CardTraits = requires(T)
 	requires std::default_initializable<typename T::PositionType>;
 	requires std::default_initializable<typename T::StatusType>;
 	requires std::default_initializable<typename T::CodeType>;
-	requires std::default_initializable<typename T::AliasType>;
 	requires std::default_initializable<typename T::TypeType>;
 	requires std::default_initializable<typename T::LevelType>;
 	requires std::default_initializable<typename T::XyzRankType>;
