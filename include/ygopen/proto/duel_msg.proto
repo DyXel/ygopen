@@ -694,12 +694,13 @@ message Msg
 			}
 			QLinkArrow link_arrow = 21;
 
-			message QCounter // QUERY_COUNTERS
+			message QCounters // QUERY_COUNTERS
 			{
 				repeated Counter values = 1;
 			}
-			QCounter counters = 22;
+			QCounters counters = 22;
 
+			// TODO: Rename to "EquippedTo" and "equipped_to"
 			message QEquipped // QUERY_EQUIP_CARD
 			{
 				Place value = 1;

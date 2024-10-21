@@ -42,6 +42,7 @@ if unittests_opt.require(gtest_dep.found()).allowed()
 		'test/deck.cpp',
 		'test/frame.cpp',
 		'test/parse_event.cpp',
+		'test/parse_query.cpp',
 		'test/place.cpp',
 		'test/room.cpp',
 		'test/undoable.cpp',

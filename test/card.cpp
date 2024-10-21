@@ -15,10 +15,8 @@ struct TestCardTraits
 	using IsPublicType = int;
 	using IsHiddenType = int;
 	using PositionType = int;
-	using CoverType = int;
 	using StatusType = int;
 	using CodeType = int;
-	using AliasType = int;
 	using TypeType = int;
 	using LevelType = int;
 	using XyzRankType = int;
