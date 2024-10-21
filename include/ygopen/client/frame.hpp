@@ -64,7 +64,8 @@ template<typename Card, typename CardBuilder = Detail::DefaultBuilder<Card>>
 class BasicFrame
 {
 public:
-	using PileType = std::vector<Card*>;
+	using CardType = Card;
+	using PileType = std::vector<CardType*>;
 	using PlaceType = Proto::Duel::Place;
 
 	class Side
@@ -72,7 +73,7 @@ public:
 	public:
 		struct Zone
 		{
-			Card* card{};
+			CardType* card{};
 			PileType materials;
 		};
 
@@ -149,7 +150,7 @@ public:
 	}
 
 	[[nodiscard]] constexpr auto card(PlaceType const& place) const noexcept
-		-> Card const&
+		-> CardType const&
 	{
 		return card_(*this, place);
 	}
@@ -186,7 +187,8 @@ public:
 		return cards_;
 	}
 
-	[[nodiscard]] constexpr auto card(PlaceType const& place) noexcept -> Card&
+	[[nodiscard]] constexpr auto card(PlaceType const& place) noexcept
+		-> CardType&
 	{
 		return card_(*this, place);
 	}
@@ -218,9 +220,9 @@ public:
 
 	// Modifiers.
 
-	constexpr auto card_add(PlaceType const& place) noexcept -> Card&
+	constexpr auto card_add(PlaceType const& place) noexcept -> CardType&
 	{
-		Card& c = construct_card();
+		CardType& c = construct_card();
 		card_insert(place, c);
 		return c;
 	}
@@ -232,7 +234,7 @@ public:
 	}
 
 	constexpr auto card_move(PlaceType const& from,
-	                         PlaceType const& to) noexcept -> Card&
+	                         PlaceType const& to) noexcept -> CardType&
 	{
 		assert(has_card(from));
 		bool const is_from_pile = is_pile(from);
@@ -242,7 +244,7 @@ public:
 		// Do not refer to a material location while also being a pile.
 		assert(!is_from_pile || is_from_not_mat);
 		assert(!is_to_pile || is_to_not_mat);
-		Card* c = nullptr;
+		CardType* c = nullptr;
 		if(is_from_pile && is_to_pile)
 		{
 			auto& p1 = pile(from);
@@ -506,7 +508,8 @@ protected:
 
 	// Methods that compose add and remove operations.
 
-	constexpr auto card_insert(PlaceType const& place, Card& c) noexcept -> void
+	constexpr auto card_insert(PlaceType const& place,
+	                           CardType& c) noexcept -> void
 	{
 		if(is_pile(place))
 		{
@@ -523,9 +526,9 @@ protected:
 		insert_at_(z.materials, place.oseq(), &c);
 	}
 
-	constexpr auto card_erase(PlaceType const& place) noexcept -> Card&
+	constexpr auto card_erase(PlaceType const& place) noexcept -> CardType&
 	{
-		Card* c = nullptr;
+		CardType* c = nullptr;
 		if(is_pile(place))
 		{
 			auto& p = pile(place);
@@ -543,12 +546,12 @@ protected:
 		return *c;
 	}
 
-	[[nodiscard]] constexpr auto construct_card() noexcept -> Card&
+	[[nodiscard]] constexpr auto construct_card() noexcept -> CardType&
 	{
 		return cards_.m.emplace_front(cards_.build());
 	}
 
-	constexpr auto destruct_card(Card& c) noexcept -> void
+	constexpr auto destruct_card(CardType& c) noexcept -> void
 	{
 		// NOTE: std::forward_list::remove attempts to remove all elements that
 		// match, but we know that they are unique so no need to traverse the
@@ -574,7 +577,7 @@ private:
 	// NOTE: Empty base optimization.
 	struct Packed : public CardBuilder
 	{
-		std::forward_list<Card> m;
+		std::forward_list<CardType> m;
 		explicit constexpr Packed(CardBuilder const& b) noexcept
 			: CardBuilder(b), m()
 		{}
@@ -636,17 +639,18 @@ private:
 
 	// Utility functions.
 
-	static constexpr auto take_at_(PileType& p, size_t index) noexcept -> Card*
+	static constexpr auto take_at_(PileType& p,
+	                               size_t index) noexcept -> CardType*
 	{
 		assert(p.size() > index);
-		Card* c = p[index];
+		CardType* c = p[index];
 		assert(c != nullptr);
 		p.erase(p.begin() + index);
 		return c;
 	}
 
 	static constexpr auto insert_at_(PileType& p, size_t index,
-	                                 Card* c) noexcept -> Card*
+	                                 CardType* c) noexcept -> CardType*
 	{
 		assert(p.size() >= index);
 		assert(c != nullptr);

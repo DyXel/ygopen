@@ -5,6 +5,8 @@
  */
 #ifndef YGOPEN_CLIENT_BOARD_HPP
 #define YGOPEN_CLIENT_BOARD_HPP
+#include <array>
+#include <cassert>
 #include <ygopen/detail/config.hpp>
 #include <ygopen/duel/constants/controller.hpp>
 

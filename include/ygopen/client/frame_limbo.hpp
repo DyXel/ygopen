@@ -1,10 +1,11 @@
 /*
- * Copyright (c) 2021, Dylam De La Torre <dyxel04@gmail.com>
+ * Copyright (c) 2024, Dylam De La Torre <dyxel04@gmail.com>
  *
  * SPDX-License-Identifier: AGPL-3.0-or-later
  */
 #ifndef YGOPEN_CLIENT_FRAME_LIMBO_HPP
 #define YGOPEN_CLIENT_FRAME_LIMBO_HPP
+#include <map>
 #include <ygopen/client/frame.hpp>
 
 namespace YGOpen::Client

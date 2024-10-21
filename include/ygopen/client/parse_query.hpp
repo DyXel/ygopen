@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, Dylam De La Torre <dyxel04@gmail.com>
+ * Copyright (c) 2024, Dylam De La Torre <dyxel04@gmail.com>
  *
  * SPDX-License-Identifier: AGPL-3.0-or-later
  */
@@ -78,61 +78,62 @@ template<bool use_cache = false, typename Frame>
 	auto const& data = query.data();
 	auto& card = frame.card(query.place());
 	// NOLINTNEXTLINE: No reflection :(
-#define X(v, q)                                                     \
-	do                                                              \
-	{                                                               \
-		if(data.has_##v())                                          \
-		{                                                           \
-			using ValueType = typename decltype(card.v)::ValueType; \
-			if constexpr(use_cache)                                 \
-			{                                                       \
-				if(card.v.get() == data.v().value())                \
-					hits |= (QueryCacheHit::q);                     \
-				else                                                \
-					card.v.set(ValueType{data.v().value()});        \
-			}                                                       \
-			else                                                    \
-			{                                                       \
-				card.v.set(ValueType{data.v().value()});            \
-			}                                                       \
-		}                                                           \
+#define X(t, v, q)                                         \
+	do                                                     \
+	{                                                      \
+		if(data.has_##v())                                 \
+		{                                                  \
+			using ValueType = typename Frame::CardType::t; \
+			auto const qcv = ValueType{data.v().value()};  \
+			if constexpr(use_cache)                        \
+			{                                              \
+				if(card.v() == qcv)                        \
+					hits |= (QueryCacheHit::q);            \
+				else                                       \
+					card.v() = qcv;                        \
+			}                                              \
+			else                                           \
+			{                                              \
+				card.v() = qcv;                            \
+			}                                              \
+		}                                                  \
 	} while(0)
-	X(owner, OWNER);
-	X(is_public, IS_PUBLIC);
-	X(is_hidden, IS_HIDDEN);
-	X(position, POSITION);
-	X(cover, COVER);
-	X(status, STATUS);
-	X(code, CODE);
-	X(alias, ALIAS);
-	X(type, TYPE);
-	X(level, LEVEL);
-	X(xyz_rank, XYZ_RANK);
-	X(attribute, ATTRIBUTE);
-	X(race, RACE);
-	X(base_atk, BASE_ATK);
-	X(atk, ATK);
-	X(base_def, BASE_DEF);
-	X(def, DEF);
-	X(pend_l_scale, PEND_L_SCALE);
-	X(pend_r_scale, PEND_R_SCALE);
-	X(link_rate, LINK_RATE);
-	X(link_arrow, LINK_ARROW);
+	X(OwnerType, owner, OWNER);
+	X(IsPublicType, is_public, IS_PUBLIC);
+	X(IsHiddenType, is_hidden, IS_HIDDEN);
+	X(PositionType, position, POSITION);
+	X(CodeType, cover, COVER);
+	X(StatusType, status, STATUS);
+	X(CodeType, code, CODE);
+	X(CodeType, alias, ALIAS);
+	X(TypeType, type, TYPE);
+	X(LevelType, level, LEVEL);
+	X(XyzRankType, xyz_rank, XYZ_RANK);
+	X(AttributeType, attribute, ATTRIBUTE);
+	X(RaceType, race, RACE);
+	X(AtkDefType, base_atk, BASE_ATK);
+	X(AtkDefType, atk, ATK);
+	X(AtkDefType, base_def, BASE_DEF);
+	X(AtkDefType, def, DEF);
+	X(PendScalesType, pend_l_scale, PEND_L_SCALE);
+	X(PendScalesType, pend_r_scale, PEND_R_SCALE);
+	X(LinkRateType, link_rate, LINK_RATE);
+	X(LinkArrowType, link_arrow, LINK_ARROW);
+#undef X
 	if(data.has_counters())
 	{
 		auto const& rf = data.counters().values();
-		card.counters.set({rf.cbegin(), rf.cend()});
+		card.counters().assign(rf.cbegin(), rf.cend());
 	}
 	if(data.has_equipped())
 	{
-		card.equipped.set(data.equipped().value());
+		card.equipped() = data.equipped().value();
 	}
 	if(data.has_relations())
 	{
 		auto const& rf = data.relations().values();
-		card.relations.set({rf.cbegin(), rf.cend()});
+		card.relations().assign(rf.cbegin(), rf.cend());
 	}
-#undef X
 	return hits;
 }
 

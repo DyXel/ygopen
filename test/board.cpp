@@ -23,7 +23,7 @@ struct TestBoardTraits
 class BoardTest : public ::testing::Test
 {
 protected:
-	static constexpr int VALUE = 123;
+	static constexpr int VALUE = 0xB16B00B5;
 	YGOpen::Client::BasicBoard<TestBoardTraits> b;
 };
 
