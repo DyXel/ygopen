@@ -38,6 +38,7 @@ if unittests_opt.require(gtest_dep.found()).allowed()
 		'test/banlist.cpp',
 		'test/bit.cpp',
 		'test/board.cpp',
+		'test/card.cpp',
 		'test/deck.cpp',
 		'test/frame.cpp',
 		'test/parse_event.cpp',
