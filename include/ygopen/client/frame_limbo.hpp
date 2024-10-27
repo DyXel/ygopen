@@ -79,7 +79,7 @@ public:
 		swap_clear_op_(limbo_clear_ops_[op_]);
 	}
 
-	// Undo specialized operations.
+	// Undo operations.
 
 	constexpr auto undo_card_add(PlaceType const& place) noexcept -> Card&
 	{

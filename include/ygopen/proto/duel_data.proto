@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, Dylam De La Torre <dyxel04@gmail.com>
+ * Copyright (c) 2024, Dylam De La Torre <dyxel04@gmail.com>
  *
  * SPDX-License-Identifier: AGPL-3.0-or-later
  */
@@ -19,6 +19,44 @@ option cc_enable_arenas = true;
 // 	DUEL_PROTOCOL_VERSION_PATCH = 0,
 // }
 
+message FieldShape
+{
+	// Use 3 Monster and Spell&Trap Zones instead of the usual 5.
+	bool three_columns_field = 1;
+	// Use Pendulum Zones (Treat cornering Spell&Trap Zones as both).
+	bool has_pzones = 2;
+	// Separate the Pendulum Zones from cornering Spell&Trap Zones.
+	bool has_separate_pzones = 3;
+	// Use Extra Monster Zones.
+	bool has_emzone = 4;
+	// Use Skill Zone (for specific Skills that use it).
+	bool has_skill_zone = 5;
+}
+
+message Options // More or less intended to be directly mapped to the C API.
+{
+	// NOTE: Must be 4 values (256 bits).
+	repeated uint64 seed = 1;
+
+	message Duelist
+	{
+		uint32 starting_lp = 1;
+		uint32 starting_draw_count = 2;
+		uint32 draw_count_per_turn = 3;
+	}
+	// NOTE: Must be at least one for each team.
+	repeated Duelist duelists_first  = 2;
+	repeated Duelist duelists_second = 3;
+
+	FieldShape shape = 4;
+
+	// TODO: Rest of the flags from C API.
+	// bool is_relay_duel; // NOTE: Only if either team's duelist count is >1.
+
+	// TODO: Size hints? We could tell the core beforehand how many cards
+	//       We plan to push and where so it can allocate everything at once.
+}
+
 enum ChainStatus
 {
 	// NOTE: CHAINING is never actually sent, but it's the default status when
@@ -26,8 +64,8 @@ enum ChainStatus
 	CHAIN_STATUS_CHAINING    = 0;
 	CHAIN_STATUS_CHAINED     = 1;
 	CHAIN_STATUS_SOLVING     = 2;
-	CHAIN_STATUS_ACT_NEGATED = 3;
-	CHAIN_STATUS_EFF_NEGATED = 4;
+	CHAIN_STATUS_ACT_NEGATED = 3; // Activation negated.
+	CHAIN_STATUS_EFF_NEGATED = 4; // Effect negated.
 }
 
 message Chain

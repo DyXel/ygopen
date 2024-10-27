@@ -65,7 +65,9 @@ message Options
 
 	FirstTurnDecideMethod ftdm = 5;
 
-	// TODO: Duel options
+	// TODO: Options that will be passed to the duel. NOTE TO SELF: Do not use
+	//       Duel.Options here directly as tempting as that is, maybe split
+	//       further later as needed.
 }
 
 message Event

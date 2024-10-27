@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, Dylam De La Torre <dyxel04@gmail.com>
+ * Copyright (c) 2024, Dylam De La Torre <dyxel04@gmail.com>
  *
  * SPDX-License-Identifier: AGPL-3.0-or-later
  */
@@ -782,7 +782,6 @@ auto encode_one(google::protobuf::Arena& arena, IEncodeContext& context,
 		auto* state = create_event()->mutable_board()->mutable_state();
 		auto* resize = state->mutable_resize();
 		skip<uint8_t>(data, "compatibility padding (duel_rule)");
-		state->set_core_flags(0U);
 		state->set_turn_counter(0);
 		for(int i = 0; i < 2; i++)
 			state->add_lps(read<uint32_t>(data, "LP"));
@@ -839,7 +838,8 @@ auto encode_one(google::protobuf::Arena& arena, IEncodeContext& context,
 		auto* state = create_event()->mutable_board()->mutable_state();
 		auto* add = state->mutable_add();
 		auto* resize = state->mutable_resize();
-		state->set_core_flags(read<uint32_t>(data, "core flags"));
+		// TODO: Map field shape-changing flags.
+		skip<uint32_t>(data, "core flags");
 		state->set_turn_counter(-1);
 		auto read_controller_state = [&](Controller con)
 		{
