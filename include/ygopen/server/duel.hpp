@@ -5,6 +5,7 @@
  */
 #ifndef YGOPEN_SERVER_DUEL_HPP
 #define YGOPEN_SERVER_DUEL_HPP
+#include <cstdint>
 #include <functional>
 #include <ygopen/proto/duel/data.hpp>
 
@@ -39,12 +40,14 @@ public:
 	virtual ~IDuel() noexcept = default;
 
 	virtual auto add_card(uint32_t code, uint8_t team, uint8_t duelist,
-	                      Proto::Duel::Place const& place) noexcept -> void;
+	                      Proto::Duel::Place const& place,
+	                      uint32_t pos) noexcept -> void = 0;
+	// TODO: Interface to add multiple cards at once?
 
 	// Process callback is guaranteed to not be called before this.
-	virtual auto start_duel() -> void;
+	virtual auto start_duel() noexcept -> void = 0;
 
-	virtual auto submit_answer(Answer const& answer) noexcept -> void;
+	virtual auto submit_answer(Answer const& answer) noexcept -> void = 0;
 };
 
 } // namespace Server
