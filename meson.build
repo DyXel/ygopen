@@ -46,6 +46,7 @@ if unittests_opt.require(gtest_dep.found()).allowed()
 		'test/place.cpp',
 		'test/room.cpp',
 		'test/undoable.cpp',
+		'test/basic_encode_context.cpp',
 	)
 
 	ygopen_unit_tests_exe = executable('ygopen_ut', ygopen_unit_tests_src,
