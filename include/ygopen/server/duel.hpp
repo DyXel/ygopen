@@ -45,7 +45,7 @@ public:
 	// TODO: Interface to add multiple cards at once?
 
 	// Process callback is guaranteed to not be called before this.
-	virtual auto start_duel() noexcept -> void = 0;
+	virtual auto start() noexcept -> void = 0;
 
 	virtual auto submit_answer(Answer const& answer) noexcept -> void = 0;
 };
