@@ -39,8 +39,8 @@ public:
 
 	virtual ~IDuel() noexcept = default;
 
-	virtual auto add_card(uint32_t code, uint8_t team, uint8_t duelist,
-	                      Proto::Duel::Place const& place,
+	virtual auto card_add(Proto::Duel::Place const& place, uint8_t owner_team,
+	                      uint8_t owner_duelist, uint32_t code,
 	                      uint32_t pos) noexcept -> void = 0;
 	// TODO: Interface to add multiple cards at once?
 
