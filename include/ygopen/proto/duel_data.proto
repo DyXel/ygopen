@@ -22,13 +22,13 @@ option cc_enable_arenas = true;
 message FieldShape
 {
 	// Use 3 Monster and Spell&Trap Zones instead of the usual 5.
-	bool three_columns_field = 1;
+	bool three_columns = 1;
 	// Use Pendulum Zones (Treat cornering Spell&Trap Zones as both).
 	bool has_pzones = 2;
 	// Separate the Pendulum Zones from cornering Spell&Trap Zones.
 	bool has_separate_pzones = 3;
 	// Use Extra Monster Zones.
-	bool has_emzone = 4;
+	bool has_emzones = 4;
 	// Use Skill Zone (for specific Skills that use it).
 	bool has_skill_zone = 5;
 }

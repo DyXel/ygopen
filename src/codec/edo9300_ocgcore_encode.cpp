@@ -838,8 +838,18 @@ auto encode_one(google::protobuf::Arena& arena, IEncodeContext& context,
 		auto* state = create_event()->mutable_board()->mutable_state();
 		auto* add = state->mutable_add();
 		auto* resize = state->mutable_resize();
-		// TODO: Map field shape-changing flags.
-		skip<uint32_t>(data, "core flags");
+		auto* shape = state->mutable_shape();
+		auto const flags = read<uint32_t>(data, "core flags");
+		// NOLINTNEXTLINE: DUEL_3_COLUMNS_FIELD
+		shape->set_three_columns((flags & 0x400000U) != 0U);
+		// NOLINTNEXTLINE: DUEL_PZONE
+		shape->set_has_pzones((flags & 0x800) != 0U);
+		// NOLINTNEXTLINE: DUEL_SEPARATE_PZONE
+		shape->set_has_separate_pzones((flags & 0x1000) != 0U);
+		// NOLINTNEXTLINE: DUEL_EMZONE
+		shape->set_has_emzones((flags & 0x2000) != 0U);
+		shape->set_has_skill_zone(0); // NOTE: Can't know this from flags alone.
+
 		state->set_turn_counter(-1);
 		auto read_controller_state = [&](Controller con)
 		{
