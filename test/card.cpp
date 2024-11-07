@@ -5,6 +5,7 @@
  */
 #include <gtest/gtest.h>
 #include <ygopen/client/card.hpp>
+#include <ygopen/client/default_card_traits.hpp>
 
 namespace
 {

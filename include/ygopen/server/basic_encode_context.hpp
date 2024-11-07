@@ -9,6 +9,7 @@
 #include <vector>
 #include <ygopen/client/board.hpp>
 #include <ygopen/client/card.hpp>
+#include <ygopen/client/default_card_traits.hpp>
 #include <ygopen/client/frame.hpp>
 #include <ygopen/client/parse_event.hpp>
 #include <ygopen/client/parse_query.hpp>
@@ -80,35 +81,8 @@ public:
 	}
 
 private:
-	struct CardTraits
-	{
-		using CodeType = uint32_t;
-		using PositionType = YGOpen::Duel::Position;
-		using AliasType = CodeType;
-		using TypeType = YGOpen::Duel::Type;
-		using LevelType = int32_t;
-		using XyzRankType = uint32_t;
-		using AttributeType = YGOpen::Duel::Attribute;
-		using RaceType = YGOpen::Duel::Race;
-		using AtkType = int32_t;
-		using DefType = AtkType;
-		using BaseAtkType = AtkType;
-		using BaseDefType = AtkType;
-		using EquippedToType = YGOpen::Proto::Duel::Place;
-		using TargetsType = std::vector<YGOpen::Proto::Duel::Place>;
-		using CountersType = std::vector<YGOpen::Proto::Duel::Counter>;
-		using OwnerType = YGOpen::Duel::Controller;
-		using StatusType = YGOpen::Duel::Status;
-		using IsPublicType = bool;
-		using PendLScaleType = uint32_t;
-		using PendRScaleType = PendLScaleType;
-		using IsHiddenType = bool;
-		using CoverType = CodeType;
-		using LinkRateType = uint32_t;
-		using LinkArrowType = YGOpen::Duel::LinkArrow;
-	};
-
-	using CardType = YGOpen::Client::BasicCard<CardTraits>;
+	using CardType =
+		YGOpen::Client::BasicCard<YGOpen::Client::DefaultCardTraits>;
 
 	struct BoardTraits
 	{
