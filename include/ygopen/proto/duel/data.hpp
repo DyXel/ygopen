@@ -44,6 +44,12 @@ struct PlaceLess
 	}
 };
 
+[[nodiscard]] inline auto operator==(Place const& lhs,
+                                     Place const& rhs) noexcept -> bool
+{
+	return !PlaceLess{}(lhs, rhs) && !PlaceLess{}(rhs, lhs);
+}
+
 [[nodiscard]] inline auto get_con(Place const& place) noexcept -> auto
 {
 	return static_cast<YGOpen::Duel::Controller>(place.con());

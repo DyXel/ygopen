@@ -567,150 +567,149 @@ message Msg
 	{
 		message Data
 		{
-			message QOwner // QUERY_OWNER
+			message QCode
+			{
+				uint32 value = 1;
+			}
+			QCode code = 1;
+
+			message QPosition
+			{
+				uint32 value = 1;
+			}
+			QPosition position = 2;
+
+			message QAlias
+			{
+				uint32 value = 1;
+			}
+			QAlias alias = 3;
+
+			message QType
+			{
+				uint32 value = 1;
+			}
+			QType type = 4;
+
+			message QLevel
 			{
 				int32 value = 1;
 			}
-			QOwner owner = 1;
+			QLevel level = 5;
 
-			message QIsPublic // QUERY_IS_PUBLIC
-			{
-				bool value = 1;
-			}
-			QIsPublic is_public = 2;
-
-			message QIsHidden // QUERY_IS_HIDDEN
-			{
-				bool value = 1;
-			}
-			QIsHidden is_hidden = 3;
-
-			message QPosition // QUERY_POSITION
+			message QXyzRank
 			{
 				uint32 value = 1;
 			}
-			QPosition position = 4;
+			QXyzRank xyz_rank = 6;
 
-			message QCover // QUERY_COVER
+			message QAttribute
 			{
 				uint32 value = 1;
 			}
-			QCover cover = 5;
+			QAttribute attribute = 7;
 
-			message QStatus // QUERY_STATUS (negated/properly summoned/etc)
-			{
-				uint32 value = 1;
-			}
-			QStatus status = 6;
-
-			message QCode // QUERY_CODE
-			{
-				uint32 value = 1;
-			}
-			QCode code = 7;
-
-			message QAlias // QUERY_ALIAS
-			{
-				uint32 value = 1;
-			}
-			QAlias alias = 8;
-
-			message QType // QUERY_TYPE
-			{
-				uint32 value = 1;
-			}
-			QType type = 9;
-
-			message QLevel // QUERY_LEVEL
-			{
-				uint32 value = 1;
-			}
-			QLevel level = 10;
-
-			message QXyzRank // QUERY_RANK
-			{
-				uint32 value = 1;
-			}
-			QXyzRank xyz_rank = 11;
-
-			message QAttribute // QUERY_ATTRIBUTE
-			{
-				uint32 value = 1;
-			}
-			QAttribute attribute = 12;
-
-			message QRace // QUERY_RACE
+			message QRace
 			{
 				uint64 value = 1;
 			}
-			QRace race = 13;
+			QRace race = 8;
 
-			message QBaseAtk // QUERY_BASE_ATTACK
+			message QAtk
 			{
 				int32 value = 1;
 			}
-			QBaseAtk base_atk = 14;
+			QAtk atk = 9;
 
-			message QAtk // QUERY_ATTACK
+			message QDef
 			{
 				int32 value = 1;
 			}
-			QAtk atk = 15;
+			QDef def = 10;
 
-			message QBaseDef // QUERY_BASE_DEFENSE
+			message QBaseAtk
 			{
 				int32 value = 1;
 			}
-			QBaseDef base_def = 16;
+			QBaseAtk base_atk = 11;
 
-			message QDef // QUERY_DEFENSE
+			message QBaseDef
 			{
 				int32 value = 1;
 			}
-			QDef def = 17;
+			QBaseDef base_def = 12;
 
-			message QPendLScale // QUERY_LSCALE
-			{
-				uint32 value = 1;
-			}
-			QPendLScale pend_l_scale = 18;
-
-			message QPendRScale // QUERY_RSCALE
-			{
-				uint32 value = 1;
-			}
-			QPendRScale pend_r_scale = 19;
-
-			message QLinkRate // QUERY_LINK
-			{
-				uint32 value = 1;
-			}
-			QLinkRate link_rate = 20;
-
-			message QLinkArrow // QUERY_LINK
-			{
-				uint32 value = 1;
-			}
-			QLinkArrow link_arrow = 21;
-
-			message QCounters // QUERY_COUNTERS
-			{
-				repeated Counter values = 1;
-			}
-			QCounters counters = 22;
-
-			// TODO: Rename to "EquippedTo" and "equipped_to"
-			message QEquipped // QUERY_EQUIP_CARD
+			message QEquippedTo
 			{
 				Place value = 1;
 			}
-			QEquipped equipped = 23;
+			QEquippedTo equipped_to = 13;
 
-			message QRelation // QUERY_TARGET_CARD
+			message QTargets
 			{
 				repeated Place values = 1;
 			}
-			QRelation relations = 24;
+			QTargets targets = 14;
+
+			message QCounters
+			{
+				repeated Counter values = 1;
+			}
+			QCounters counters = 15;
+
+			message QOwner
+			{
+				int32 value = 1;
+			}
+			QOwner owner = 16;
+
+			message QStatus // (negated, properly summoned, etc...)
+			{
+				uint32 value = 1;
+			}
+			QStatus status = 17;
+
+			message QIsPublic
+			{
+				bool value = 1;
+			}
+			QIsPublic is_public = 18;
+
+			message QPendLScale
+			{
+				uint32 value = 1;
+			}
+			QPendLScale pend_l_scale = 19;
+
+			message QPendRScale
+			{
+				uint32 value = 1;
+			}
+			QPendRScale pend_r_scale = 20;
+
+			message QLinkRate
+			{
+				uint32 value = 1;
+			}
+			QLinkRate link_rate = 21;
+
+			message QLinkArrow
+			{
+				uint32 value = 1;
+			}
+			QLinkArrow link_arrow = 22;
+
+			message QIsHidden
+			{
+				bool value = 1;
+			}
+			QIsHidden is_hidden = 23;
+
+			message QCover
+			{
+				uint32 value = 1;
+			}
+			QCover cover = 24;
 		}
 
 		Place place = 1;

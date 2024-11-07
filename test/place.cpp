@@ -56,4 +56,6 @@ TEST(PlaceTest, PlaceLessWorks)
 	expect_p1_greater();
 }
 
+// TODO: Test operator== from <ygopen/proto/duel/data.hpp>
+
 } // namespace

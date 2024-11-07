@@ -12,24 +12,30 @@ namespace
 
 struct TestCardTraits
 {
-	using OwnerType = int64_t;
-	using IsPublicType = bool;
-	using IsHiddenType = bool;
-	using PositionType = int64_t;
-	using StatusType = int64_t;
-	using CodeType = int64_t;
-	using TypeType = int64_t;
-	using LevelType = int64_t;
-	using XyzRankType = int64_t;
-	using AttributeType = int64_t;
-	using RaceType = uint64_t;
-	using AtkDefType = int64_t;
-	using PendScalesType = int64_t;
-	using LinkRateType = int64_t;
-	using LinkArrowType = int64_t;
+	using CodeType = uint32_t;
+	using PositionType = YGOpen::Duel::Position;
+	using AliasType = CodeType;
+	using TypeType = YGOpen::Duel::Type;
+	using LevelType = int32_t;
+	using XyzRankType = uint32_t;
+	using AttributeType = YGOpen::Duel::Attribute;
+	using RaceType = YGOpen::Duel::Race;
+	using AtkType = int32_t;
+	using DefType = AtkType;
+	using BaseAtkType = AtkType;
+	using BaseDefType = AtkType;
+	using EquippedToType = YGOpen::Proto::Duel::Place;
+	using TargetsType = std::vector<YGOpen::Proto::Duel::Place>;
 	using CountersType = std::vector<YGOpen::Proto::Duel::Counter>;
-	using EquippedType = YGOpen::Proto::Duel::Place;
-	using RelationsType = std::vector<YGOpen::Proto::Duel::Place>;
+	using OwnerType = YGOpen::Duel::Controller;
+	using StatusType = YGOpen::Duel::Status;
+	using IsPublicType = bool;
+	using PendLScaleType = uint32_t;
+	using PendRScaleType = PendLScaleType;
+	using IsHiddenType = bool;
+	using CoverType = CodeType;
+	using LinkRateType = uint32_t;
+	using LinkArrowType = YGOpen::Duel::LinkArrow;
 };
 
 // TODO: counters, equipped, relations
@@ -378,7 +384,7 @@ TEST_F(ParseQueryTest, XyzRankSettingWorks)
 	q.mutable_data()->mutable_xyz_rank()->set_value(VALUE1);
 	hits = YGOpen::Client::parse_query<true>(f, q);
 	ASSERT_EQ(f.c.xyz_rank(), VALUE1);
-	ASSERT_EQ(hits, YGOpen::Client::QueryCacheHit::XYZ_RANK);
+	ASSERT_EQ(hits, YGOpen::Client::QueryCacheHit::RANK);
 	// Check that cache is not hit when use_cache=true
 	q.mutable_data()->mutable_xyz_rank()->set_value(VALUE2);
 	hits = YGOpen::Client::parse_query<true>(f, q);
@@ -462,7 +468,7 @@ TEST_F(ParseQueryTest, BaseAtkSettingWorks)
 	q.mutable_data()->mutable_base_atk()->set_value(VALUE1);
 	hits = YGOpen::Client::parse_query<true>(f, q);
 	ASSERT_EQ(f.c.base_atk(), VALUE1);
-	ASSERT_EQ(hits, YGOpen::Client::QueryCacheHit::BASE_ATK);
+	ASSERT_EQ(hits, YGOpen::Client::QueryCacheHit::BASE_ATTACK);
 	// Check that cache is not hit when use_cache=true
 	q.mutable_data()->mutable_base_atk()->set_value(VALUE2);
 	hits = YGOpen::Client::parse_query<true>(f, q);
@@ -490,7 +496,7 @@ TEST_F(ParseQueryTest, AtkSettingWorks)
 	q.mutable_data()->mutable_atk()->set_value(VALUE1);
 	hits = YGOpen::Client::parse_query<true>(f, q);
 	ASSERT_EQ(f.c.atk(), VALUE1);
-	ASSERT_EQ(hits, YGOpen::Client::QueryCacheHit::ATK);
+	ASSERT_EQ(hits, YGOpen::Client::QueryCacheHit::ATTACK);
 	// Check that cache is not hit when use_cache=true
 	q.mutable_data()->mutable_atk()->set_value(VALUE2);
 	hits = YGOpen::Client::parse_query<true>(f, q);
@@ -518,7 +524,7 @@ TEST_F(ParseQueryTest, BaseDefSettingWorks)
 	q.mutable_data()->mutable_base_def()->set_value(VALUE1);
 	hits = YGOpen::Client::parse_query<true>(f, q);
 	ASSERT_EQ(f.c.base_def(), VALUE1);
-	ASSERT_EQ(hits, YGOpen::Client::QueryCacheHit::BASE_DEF);
+	ASSERT_EQ(hits, YGOpen::Client::QueryCacheHit::BASE_DEFENSE);
 	// Check that cache is not hit when use_cache=true
 	q.mutable_data()->mutable_base_def()->set_value(VALUE2);
 	hits = YGOpen::Client::parse_query<true>(f, q);
@@ -546,7 +552,7 @@ TEST_F(ParseQueryTest, DefSettingWorks)
 	q.mutable_data()->mutable_def()->set_value(VALUE1);
 	hits = YGOpen::Client::parse_query<true>(f, q);
 	ASSERT_EQ(f.c.def(), VALUE1);
-	ASSERT_EQ(hits, YGOpen::Client::QueryCacheHit::DEF);
+	ASSERT_EQ(hits, YGOpen::Client::QueryCacheHit::DEFENSE);
 	// Check that cache is not hit when use_cache=true
 	q.mutable_data()->mutable_def()->set_value(VALUE2);
 	hits = YGOpen::Client::parse_query<true>(f, q);
@@ -574,7 +580,7 @@ TEST_F(ParseQueryTest, PendLScaleSettingWorks)
 	q.mutable_data()->mutable_pend_l_scale()->set_value(VALUE1);
 	hits = YGOpen::Client::parse_query<true>(f, q);
 	ASSERT_EQ(f.c.pend_l_scale(), VALUE1);
-	ASSERT_EQ(hits, YGOpen::Client::QueryCacheHit::PEND_L_SCALE);
+	ASSERT_EQ(hits, YGOpen::Client::QueryCacheHit::LSCALE);
 	// Check that cache is not hit when use_cache=true
 	q.mutable_data()->mutable_pend_l_scale()->set_value(VALUE2);
 	hits = YGOpen::Client::parse_query<true>(f, q);
@@ -602,7 +608,7 @@ TEST_F(ParseQueryTest, PendRScaleSettingWorks)
 	q.mutable_data()->mutable_pend_r_scale()->set_value(VALUE1);
 	hits = YGOpen::Client::parse_query<true>(f, q);
 	ASSERT_EQ(f.c.pend_r_scale(), VALUE1);
-	ASSERT_EQ(hits, YGOpen::Client::QueryCacheHit::PEND_R_SCALE);
+	ASSERT_EQ(hits, YGOpen::Client::QueryCacheHit::RSCALE);
 	// Check that cache is not hit when use_cache=true
 	q.mutable_data()->mutable_pend_r_scale()->set_value(VALUE2);
 	hits = YGOpen::Client::parse_query<true>(f, q);

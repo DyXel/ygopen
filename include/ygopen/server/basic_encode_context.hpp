@@ -82,24 +82,30 @@ public:
 private:
 	struct CardTraits
 	{
-		using OwnerType = YGOpen::Duel::Controller;
-		using IsPublicType = bool;
-		using IsHiddenType = bool;
-		using PositionType = YGOpen::Duel::Position;
-		using StatusType = YGOpen::Duel::Status;
 		using CodeType = uint32_t;
+		using PositionType = YGOpen::Duel::Position;
+		using AliasType = CodeType;
 		using TypeType = YGOpen::Duel::Type;
-		using LevelType = uint32_t;
+		using LevelType = int32_t;
 		using XyzRankType = uint32_t;
 		using AttributeType = YGOpen::Duel::Attribute;
 		using RaceType = YGOpen::Duel::Race;
-		using AtkDefType = int32_t;
-		using PendScalesType = uint32_t;
+		using AtkType = int32_t;
+		using DefType = AtkType;
+		using BaseAtkType = AtkType;
+		using BaseDefType = AtkType;
+		using EquippedToType = YGOpen::Proto::Duel::Place;
+		using TargetsType = std::vector<YGOpen::Proto::Duel::Place>;
+		using CountersType = std::vector<YGOpen::Proto::Duel::Counter>;
+		using OwnerType = YGOpen::Duel::Controller;
+		using StatusType = YGOpen::Duel::Status;
+		using IsPublicType = bool;
+		using PendLScaleType = uint32_t;
+		using PendRScaleType = PendLScaleType;
+		using IsHiddenType = bool;
+		using CoverType = CodeType;
 		using LinkRateType = uint32_t;
 		using LinkArrowType = YGOpen::Duel::LinkArrow;
-		using CountersType = std::vector<YGOpen::Proto::Duel::Counter>;
-		using EquippedType = YGOpen::Proto::Duel::Place;
-		using RelationsType = std::vector<YGOpen::Proto::Duel::Place>;
 	};
 
 	using CardType = YGOpen::Client::BasicCard<CardTraits>;

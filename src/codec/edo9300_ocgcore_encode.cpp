@@ -322,33 +322,16 @@ auto encode_one_query(uint8_t const* data,
 {
 	enum CoreQuery : CQFlag
 	{
-		QUERY_CODE = 0x1U,
-		QUERY_POSITION = 0x2U,
-		QUERY_ALIAS = 0x4U,
-		QUERY_TYPE = 0x8U,
-		QUERY_LEVEL = 0x10U,
-		QUERY_RANK = 0x20U,
-		QUERY_ATTRIBUTE = 0x40U,
-		QUERY_RACE = 0x80U,
-		QUERY_ATTACK = 0x100U,
-		QUERY_DEFENSE = 0x200U,
-		QUERY_BASE_ATTACK = 0x400U,
-		QUERY_BASE_DEFENSE = 0x800U,
-		// 	QUERY_REASON = 0x1000U,
-		QUERY_REASON_CARD = 0x2000U,
-		QUERY_EQUIP_CARD = 0x4000U,
-		QUERY_TARGET_CARD = 0x8000U,
-		QUERY_OVERLAY_CARD = 0x10000U,
-		QUERY_COUNTERS = 0x20000U,
-		QUERY_OWNER = 0x40000U,
-		QUERY_STATUS = 0x80000U,
-		QUERY_IS_PUBLIC = 0x100000U,
-		QUERY_LSCALE = 0x200000U,
-		QUERY_RSCALE = 0x400000U,
-		QUERY_LINK = 0x800000U,
-		QUERY_IS_HIDDEN = 0x1000000U,
-		QUERY_COVER = 0x2000000U,
-		QUERY_END = 0x80000000U,
+#define X(NAME, Name, name, value) QUERY_##NAME = value,
+#define EXPAND_ARRAY_LIKE_QUERIES
+#define EXPAND_OLD_LINK_QUERY
+#define EXPAND_END_MARKER_QUERY
+#include <ygopen/client/queries.inl>
+#undef EXPAND_END_MARKER_QUERY
+#undef EXPAND_OLD_LINK_QUERY
+#undef EXPAND_ARRAY_LIKE_QUERIES
+#undef X
+		QUERY_OVERLAY_CARD = 0x10000,
 	};
 	EncodeOneQueryResult result{};
 	decltype(data) const sentry = data;
@@ -358,32 +341,9 @@ auto encode_one_query(uint8_t const* data,
 		auto const flag = read<CQFlag>(data, "query flag");
 		switch(flag)
 		{
-		case QUERY_END:
+		case QUERY_CODE:
 		{
-			log("finished parsing query");
-			result.bytes_read = static_cast<size_t>(data - sentry);
-			return result;
-		}
-// NOLINTNEXTLINE: No reflection :(
-#define X(qtype, v, type)                                 \
-	case qtype:                                           \
-	{                                                     \
-		q.mutable_##v()->set_value(read<type>(data, #v)); \
-		break;                                            \
-	}
-		case QUERY_OWNER:
-		{
-			q.mutable_owner()->set_value(read_con(data));
-			break;
-		}
-		case QUERY_IS_PUBLIC:
-		{
-			q.mutable_is_public()->set_value(read_bool(data, "is_public"));
-			break;
-		}
-		case QUERY_IS_HIDDEN:
-		{
-			q.mutable_is_hidden()->set_value(read_bool(data, "is_hidden"));
+			q.mutable_code()->set_value(read<CCode>(data, "code"));
 			break;
 		}
 		case QUERY_POSITION:
@@ -391,21 +351,26 @@ auto encode_one_query(uint8_t const* data,
 			q.mutable_position()->set_value(read_pos(data));
 			break;
 		}
-			X(QUERY_COVER, cover, CCode)
-		case QUERY_STATUS:
+		case QUERY_ALIAS:
 		{
-			q.mutable_status()->set_value(read_status(data));
+			q.mutable_alias()->set_value(read<CCode>(data, "alias"));
 			break;
 		}
-			X(QUERY_CODE, code, CCode)
-			X(QUERY_ALIAS, alias, CCode)
 		case QUERY_TYPE:
 		{
 			q.mutable_type()->set_value(read_type(data));
 			break;
 		}
-			X(QUERY_LEVEL, level, uint32_t)
-			X(QUERY_RANK, xyz_rank, uint32_t)
+		case QUERY_LEVEL:
+		{
+			q.mutable_level()->set_value(read<uint32_t>(data, "level"));
+			break;
+		}
+		case QUERY_RANK:
+		{
+			q.mutable_xyz_rank()->set_value(read<uint32_t>(data, "xyz_rank"));
+			break;
+		}
 		case QUERY_ATTRIBUTE:
 		{
 			q.mutable_attribute()->set_value(read_attribute(data));
@@ -416,17 +381,37 @@ auto encode_one_query(uint8_t const* data,
 			q.mutable_race()->set_value(read_race(data));
 			break;
 		}
-			X(QUERY_BASE_ATTACK, base_atk, int32_t)
-			X(QUERY_ATTACK, atk, int32_t)
-			X(QUERY_BASE_DEFENSE, base_def, int32_t)
-			X(QUERY_DEFENSE, def, int32_t)
-			X(QUERY_LSCALE, pend_l_scale, uint32_t)
-			X(QUERY_RSCALE, pend_r_scale, uint32_t)
-#undef X
-		case QUERY_LINK:
+		case QUERY_ATTACK:
 		{
-			q.mutable_link_rate()->set_value(read<int32_t>(data, "link_rate"));
-			q.mutable_link_arrow()->set_value(read_link_arrow(data));
+			q.mutable_atk()->set_value(read<int32_t>(data, "atk"));
+			break;
+		}
+		case QUERY_DEFENSE:
+		{
+			q.mutable_def()->set_value(read<int32_t>(data, "def"));
+			break;
+		}
+		case QUERY_BASE_ATTACK:
+		{
+			q.mutable_base_atk()->set_value(read<int32_t>(data, "base_atk"));
+			break;
+		}
+		case QUERY_BASE_DEFENSE:
+		{
+			q.mutable_base_def()->set_value(read<int32_t>(data, "base_def"));
+			break;
+		}
+		case QUERY_EQUIP_CARD:
+		{
+			read_loc_info(data, *q.mutable_equipped_to()->mutable_value());
+			break;
+		}
+		case QUERY_TARGET_CARD:
+		{
+			auto* targets = q.mutable_targets();
+			auto const count = read<CCount>(data, "target card count");
+			for(CCount i = 0; i < count; i++)
+				read_loc_info(data, *targets->add_values());
 			break;
 		}
 		case QUERY_COUNTERS:
@@ -437,18 +422,54 @@ auto encode_one_query(uint8_t const* data,
 				read_counter(data, *counters->add_values());
 			break;
 		}
-		case QUERY_EQUIP_CARD:
+		case QUERY_OWNER:
 		{
-			read_loc_info(data, *q.mutable_equipped()->mutable_value());
+			q.mutable_owner()->set_value(read_con(data));
 			break;
 		}
-		case QUERY_TARGET_CARD:
+		case QUERY_STATUS:
 		{
-			auto* relations = q.mutable_relations();
-			auto const count = read<CCount>(data, "target card count");
-			for(CCount i = 0; i < count; i++)
-				read_loc_info(data, *relations->add_values());
+			q.mutable_status()->set_value(read_status(data));
 			break;
+		}
+		case QUERY_IS_PUBLIC:
+		{
+			q.mutable_is_public()->set_value(read_bool(data, "is_public"));
+			break;
+		}
+		case QUERY_LSCALE:
+		{
+			q.mutable_pend_l_scale()->set_value(
+				read<uint32_t>(data, "pend_l_scale"));
+			break;
+		}
+		case QUERY_RSCALE:
+		{
+			q.mutable_pend_r_scale()->set_value(
+				read<uint32_t>(data, "pend_r_scale"));
+			break;
+		}
+		case QUERY_LINK:
+		{
+			q.mutable_link_rate()->set_value(read<int32_t>(data, "link_rate"));
+			q.mutable_link_arrow()->set_value(read_link_arrow(data));
+			break;
+		}
+		case QUERY_IS_HIDDEN:
+		{
+			q.mutable_is_hidden()->set_value(read_bool(data, "is_hidden"));
+			break;
+		}
+		case QUERY_COVER:
+		{
+			q.mutable_cover()->set_value(read<CCode>(data, "cover"));
+			break;
+		}
+		case QUERY_END:
+		{
+			log("finished parsing query");
+			result.bytes_read = static_cast<size_t>(data - sentry);
+			return result;
 		}
 		case QUERY_OVERLAY_CARD:
 		{
