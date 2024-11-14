@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, Dylam De La Torre <dyxel04@gmail.com>
+ * Copyright (c) 2024, Dylam De La Torre <dyxel04@gmail.com>
  *
  * SPDX-License-Identifier: AGPL-3.0-or-later
  */
@@ -15,6 +15,12 @@ enum Controller : int
 	CONTROLLER_1 = 1,
 	CONTROLLER_ARRAY_SIZE, // NOTE: Leave always as last.
 };
+
+inline auto all_controllers() noexcept -> auto
+{
+	static std::initializer_list<Controller> cons = {Controller::CONTROLLER_0, Controller::CONTROLLER_1};
+	return cons;
+}
 
 } // namespace YGOpen::Duel
 
