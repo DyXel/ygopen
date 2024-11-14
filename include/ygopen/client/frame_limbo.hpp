@@ -130,14 +130,14 @@ public:
 	constexpr auto undo_card_shuffle(InputIt previous, InputIt current,
 	                                 size_t count) noexcept -> void
 	{
-		// TODO
+		assert(false); // TODO
 	}
 
 	constexpr auto undo_pile_splice(PlaceType const& from, size_t count,
 	                                PlaceType const& to,
 	                                bool reverse) noexcept -> void
 	{
-		// TODO: Maybe not needed?
+		this->pile_splice(to, count, from, reverse);
 	}
 
 private:
