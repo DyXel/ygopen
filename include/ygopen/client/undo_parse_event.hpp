@@ -177,8 +177,7 @@ auto undo_parse_event(UndoableBoard& board,
 		case Msg::Event::Pile::kSplice:
 		{
 			for(auto const& op : reverse(pile.splice().ops()))
-				frame.undo_pile_splice(op.from(), op.count(), op.to(),
-				                       op.reverse());
+				frame.pile_splice(op.to(), op.count(), op.from(), op.reverse());
 			break;
 		}
 		case Msg::Event::Pile::kExchange:

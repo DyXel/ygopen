@@ -18,7 +18,8 @@ enum Controller : int
 
 inline auto all_controllers() noexcept -> auto
 {
-	static std::initializer_list<Controller> cons = {Controller::CONTROLLER_0, Controller::CONTROLLER_1};
+	static std::initializer_list<Controller> cons = {Controller::CONTROLLER_0,
+	                                                 Controller::CONTROLLER_1};
 	return cons;
 }
 

@@ -112,7 +112,8 @@ public:
 		{
 			size_t diff = p.size() - rsz_op.prev_size;
 			rsz_op.slice.resize(diff);
-			std::copy(p.cbegin() + p.size() - diff, p.cend(), rsz_op.slice.begin());
+			std::copy(p.cbegin() + p.size() - diff, p.cend(),
+			          rsz_op.slice.begin());
 			p.resize(rsz_op.prev_size);
 		}
 		assert(p.size() == rsz_op.prev_size);
@@ -131,13 +132,6 @@ public:
 	                                 size_t count) noexcept -> void
 	{
 		assert(false); // TODO
-	}
-
-	constexpr auto undo_pile_splice(PlaceType const& from, size_t count,
-	                                PlaceType const& to,
-	                                bool reverse) noexcept -> void
-	{
-		this->pile_splice(to, count, from, reverse);
 	}
 
 private:
