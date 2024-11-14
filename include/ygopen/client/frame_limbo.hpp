@@ -71,6 +71,7 @@ public:
 			p.resize(count);
 		}
 		assert(p.size() == count);
+		this->verify_pile_(p);
 	}
 
 	constexpr auto clear() noexcept -> void
@@ -115,6 +116,7 @@ public:
 			p.resize(rsz_op.prev_size);
 		}
 		assert(p.size() == rsz_op.prev_size);
+		this->verify_pile_(p);
 		regress_op_();
 	}
 

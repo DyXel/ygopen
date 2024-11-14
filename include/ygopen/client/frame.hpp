@@ -423,6 +423,7 @@ public:
 				p.pop_back();
 			}
 		}
+		verify_pile_(p);
 	}
 
 	constexpr auto pile_splice(PlaceType const& from, size_t count,
@@ -443,12 +444,14 @@ public:
 			else
 				std::copy(first, last, d_first);
 			pile_from.erase(first, last);
+			verify_pile_(pile_from);
 		}
 		{
 			auto& pile_to = pile(to);
 			pile_to.insert(pile_to.begin() + to.seq(),
 			               pile_splice_cache_.cbegin(),
 			               pile_splice_cache_.cend());
+			verify_pile_(pile_to);
 		}
 	}
 
@@ -569,6 +572,14 @@ protected:
 			break;
 		}
 		assert(destructed);
+	}
+
+	// Debug functions.
+
+	static constexpr auto verify_pile_(PileType const& p) noexcept -> void
+	{
+		for(auto c : p)
+			assert(c != nullptr);
 	}
 
 private:
