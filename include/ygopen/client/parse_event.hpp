@@ -30,7 +30,7 @@ concept PushableAndPopable = requires(T t, Concrete const& c)
 template<typename T, typename Concrete>
 concept GettableAndSettable = requires(T t, Concrete c)
 {
-	Concrete(t);
+	Concrete{t};
 	t = c;
 };
 
@@ -187,7 +187,7 @@ auto parse_event(Board& board,
 	}
 	case Msg::Event::kNextTurn:
 	{
-		auto const next_turn = uint32_t(board.turn()) + 1;
+		auto const next_turn = board.turn() + 1;
 		board.turn() = next_turn;
 		board.turn_controller() = Controller{event.next_turn()};
 		break;
@@ -196,7 +196,7 @@ auto parse_event(Board& board,
 	{
 		auto const& lp = event.lp();
 		auto& blp = board.lp(Controller{lp.controller()});
-		auto lpv = uint32_t(board.lp(Controller{lp.controller()}));
+		auto lpv = uint32_t{board.lp(Controller{lp.controller()})};
 		switch(lp.t_case())
 		{
 		case Msg::Event::LP::kBecome:

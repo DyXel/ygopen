@@ -19,15 +19,15 @@ protected:
 
 TEST_F(UndoableTest, AppendingWorks)
 {
-	ASSERT_EQ(int(v), 0);
+	ASSERT_EQ(int{v}, 0);
 	v = VALUE_1;
-	ASSERT_EQ(int(v), VALUE_1);
+	ASSERT_EQ(int{v}, VALUE_1);
 	v = VALUE_2;
-	ASSERT_EQ(int(v), VALUE_2);
+	ASSERT_EQ(int{v}, VALUE_2);
 	v.undo();
-	ASSERT_EQ(int(v), VALUE_1);
+	ASSERT_EQ(int{v}, VALUE_1);
 	v.undo();
-	ASSERT_EQ(int(v), 0);
+	ASSERT_EQ(int{v}, 0);
 }
 
 TEST_F(UndoableTest, NoOpWhenNotAtLast)
@@ -35,7 +35,17 @@ TEST_F(UndoableTest, NoOpWhenNotAtLast)
 	v = VALUE_1;
 	v.undo();
 	v = VALUE_2; // NOTE: Shouldn't have any effect but forward iterator.
-	ASSERT_EQ(int(v), VALUE_1);
+	ASSERT_EQ(int{v}, VALUE_1);
+}
+
+TEST_F(UndoableTest, DirectlyEquallyComparable)
+{
+	v = VALUE_1;
+	ASSERT_EQ(v, VALUE_1);
+	v = VALUE_2;
+	ASSERT_EQ(v, VALUE_2);
+	v.undo();
+	ASSERT_EQ(v, VALUE_1);
 }
 
 TEST_F(UndoableTest, UndoCalledTooMuchDies)

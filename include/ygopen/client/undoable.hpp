@@ -23,7 +23,7 @@ public:
 		: values_(1U), current_(values_.cbegin())
 	{}
 
-	[[nodiscard]] constexpr explicit operator ValueType() const noexcept
+	[[nodiscard]] constexpr operator ValueType const&() const noexcept
 	{
 		return *current_;
 	}
@@ -35,6 +35,12 @@ public:
 			values_.emplace_back(std::forward<U>(v));
 		current_++;
 		return *this;
+	};
+
+	template<typename U = ValueType>
+	constexpr auto operator==(U&& v) const noexcept -> bool
+	{
+		return *current_ == v;
 	};
 
 	constexpr auto undo() noexcept -> void
@@ -56,26 +62,25 @@ public:
 	};
 
 	template<typename... Args>
-	constexpr auto push_back(Args&&... args) noexcept -> auto {
-		// TODO
+	constexpr auto push_back(Args&&... args) noexcept -> auto
+	{
+		assert(false); // TODO
 	};
 
-	constexpr auto pop_back() noexcept -> auto {
-		// TODO
-	};
-
-	template<typename... Args>
-	constexpr auto undo_assign(Args&&... args) noexcept -> auto {
-		// TODO
+	constexpr auto pop_back() noexcept -> auto
+	{
+		assert(false); // TODO
 	};
 
 	template<typename... Args>
-	constexpr auto undo_push_back(Args&&... args) noexcept -> auto {
-		// TODO
+	constexpr auto undo_push_back(Args&&... args) noexcept -> auto
+	{
+		assert(false); // TODO
 	};
 
-	constexpr auto undo_pop_back() noexcept -> auto {
-		// TODO
+	constexpr auto undo_pop_back() noexcept -> auto
+	{
+		assert(false); // TODO
 	};
 
 private:

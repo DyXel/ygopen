@@ -75,8 +75,8 @@ auto undo_parse_event(UndoableBoard& board,
 			for(auto const& place : reverse(state.add().places()))
 				frame.undo_card_add(place);
 			frame.undo_clear();
-			auto const& chains = state.chains();
-			board.chain_stack().undo_assign(chains.cbegin(), chains.cend());
+			[[maybe_unused]] auto const& chains = state.chains();
+			board.chain_stack().undo();
 			for(auto con : {CONTROLLER_1, CONTROLLER_0})
 				board.lp(con).undo();
 			if(auto tc = state.turn_counter(); tc >= 0)
@@ -193,8 +193,8 @@ auto undo_parse_event(UndoableBoard& board,
 	}
 	case Msg::Event::kZoneBlock:
 	{
-		auto const& zones = event.zone_block().zones();
-		board.blocked_zones().undo_assign(zones.cbegin(), zones.cend());
+		[[maybe_unused]] auto const& zones = event.zone_block().zones();
+		board.blocked_zones().undo();
 		break;
 	}
 	case Msg::Event::kFinish:
