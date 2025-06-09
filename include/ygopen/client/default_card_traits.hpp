@@ -11,9 +11,6 @@
 namespace YGOpen::Client
 {
 
-namespace Detail
-{
-
 // Admitely, this is a bit overkill, but writing it down documents the pattern
 // for reuse later.
 
@@ -167,12 +164,10 @@ struct DefaultCardTrait<0x200000000>
 	using Type = YGOpen::Duel::LinkArrow;
 };
 
-} // namespace Detail
-
 struct DefaultCardTraits
 {
 #define X(NAME, Name, name, value) \
-	using Name##Type = typename Detail::DefaultCardTrait<(value)>::Type;
+	using Name##Type = typename DefaultCardTrait<(value)>::Type;
 #define EXPAND_ARRAY_LIKE_QUERIES
 #define EXPAND_SEPARATE_LINK_DATA_QUERIES
 #include <ygopen/client/queries.inl>

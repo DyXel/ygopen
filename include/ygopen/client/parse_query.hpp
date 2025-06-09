@@ -28,8 +28,8 @@ enum class QueryCacheHit : uint64_t
 #undef X
 };
 
-constexpr auto operator&(QueryCacheHit lhs,
-                         QueryCacheHit rhs) noexcept -> QueryCacheHit
+constexpr auto operator&(QueryCacheHit lhs, QueryCacheHit rhs) noexcept
+	-> QueryCacheHit
 {
 	return static_cast<QueryCacheHit>(
 		static_cast<std::underlying_type<QueryCacheHit>::type>(lhs) &
@@ -42,8 +42,8 @@ constexpr auto operator~(QueryCacheHit rhs) noexcept -> QueryCacheHit
 		~static_cast<std::underlying_type<QueryCacheHit>::type>(rhs));
 }
 
-constexpr auto operator|=(QueryCacheHit& lhs,
-                          QueryCacheHit rhs) noexcept -> QueryCacheHit&
+constexpr auto operator|=(QueryCacheHit& lhs, QueryCacheHit rhs) noexcept
+	-> QueryCacheHit&
 {
 	lhs = static_cast<QueryCacheHit>(
 		static_cast<std::underlying_type<QueryCacheHit>::type>(lhs) |

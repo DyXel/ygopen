@@ -340,8 +340,8 @@ private:
 		YGOPEN_UNREACHABLE();
 	}
 
-	auto on_client_enter_(Configuring& /*state*/,
-	                      ClientType& peer) noexcept -> void
+	auto on_client_enter_(Configuring& /*state*/, ClientType& peer) noexcept
+		-> void
 	{
 		auto find_empty_duelist_slot = [&]() noexcept -> DuelistSearch
 		{
@@ -432,8 +432,8 @@ private:
 		send_all_(*e2);
 	}
 
-	auto on_client_enter_(DecidingFirstTurn& state,
-	                      ClientType& peer) noexcept -> void
+	auto on_client_enter_(DecidingFirstTurn& state, ClientType& peer) noexcept
+		-> void
 	{
 		// TODO
 	}

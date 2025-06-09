@@ -321,6 +321,7 @@ message Msg
 				uint32 code = 2;
 			}
 
+			// TODO: Maybe shouldn't be a "Select Card" but Select Code?
 			message Limbo
 			{
 				// Can the selection be cancelled?
@@ -367,6 +368,11 @@ message Msg
 				{
 					Place place    = 1;
 					uint32 code    = 2;
+					// Each selection can be counted as any of the parameters.
+					// A parameter cannot be 0, since it wouldn't contribute
+					// to the sum, and you can't overpay the sum. Must at least
+					// have 1 parameter.
+					//repeated uint32 params = 3;
 					uint32 param_1 = 3;
 					uint32 param_2 = 4;
 				}
@@ -412,7 +418,9 @@ message Msg
 			}
 		}
 
-		message SelectCardCode // TODO: Refactor this to use a properly structured flow.
+		// TODO: Refactor this to use a properly structured flow.
+		// ^ WTF did I mean by this comment? Maybe strongly-typed opcodes/args?
+		message SelectCardCode
 		{
 			// Amount of cards to declare (usually one).
 			uint32 count            = 1;
@@ -428,6 +436,7 @@ message Msg
 			message _CounterCard
 			{
 				Place place   = 1;
+				// TODO: repeated amounts? to generalize with UniqueSum/Tribute
 				uint32 amount = 2;
 			}
 

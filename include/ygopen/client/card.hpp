@@ -12,8 +12,7 @@ namespace YGOpen::Client
 
 #ifdef YGOPEN_HAS_CONCEPTS
 template<typename T>
-concept CardTraits = requires(T)
-{
+concept CardTraits = requires(T){
 #define X(NAME, Name, name, value) \
 	requires std::default_initializable<typename T::Name##Type>;
 #define EXPAND_ARRAY_LIKE_QUERIES

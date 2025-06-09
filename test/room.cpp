@@ -178,8 +178,9 @@ struct TestRoomTraits
 
 using TestRoom = YGOpen::Server::BasicRoom<TestRoomTraits>;
 
-auto default_room_with_host(
-	Client& c, YGOpen::Proto::Room::Options options) noexcept -> TestRoom
+auto default_room_with_host(Client& c,
+                            YGOpen::Proto::Room::Options options) noexcept
+	-> TestRoom
 {
 	return TestRoom{dv, cdf, rng, c, std::move(options)};
 }

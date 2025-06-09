@@ -155,8 +155,9 @@ public:
 		return card_(*this, place);
 	}
 
-	[[nodiscard]] constexpr auto pile(Duel::Controller con, Duel::Location loc)
-		const noexcept -> PileType const&
+	[[nodiscard]] constexpr auto pile(Duel::Controller con,
+	                                  Duel::Location loc) const noexcept
+		-> PileType const&
 	{
 		return pile_(*this, con, loc);
 	}
@@ -340,8 +341,8 @@ public:
 		}
 	}
 
-	constexpr auto card_swap(PlaceType const& a,
-	                         PlaceType const& b) noexcept -> void
+	constexpr auto card_swap(PlaceType const& a, PlaceType const& b) noexcept
+		-> void
 	{
 		assert(has_card(a));
 		assert(has_card(b));
@@ -405,8 +406,8 @@ public:
 		}
 	}
 
-	constexpr auto pile_resize(PlaceType const& place,
-	                           size_t count) noexcept -> void
+	constexpr auto pile_resize(PlaceType const& place, size_t count) noexcept
+		-> void
 	{
 		assert(is_pile(place));
 		auto& p = pile(place);
@@ -427,8 +428,8 @@ public:
 	}
 
 	constexpr auto pile_splice(PlaceType const& from, size_t count,
-	                           PlaceType const& to,
-	                           bool reverse) noexcept -> void
+	                           PlaceType const& to, bool reverse) noexcept
+		-> void
 	{
 		assert(is_pile(from));
 		assert(is_pile(to));
@@ -455,14 +456,17 @@ public:
 		}
 	}
 
-	constexpr auto pile_swap(PlaceType const& a,
-	                         PlaceType const& b) noexcept -> void
+	constexpr auto pile_swap(PlaceType const& a, PlaceType const& b) noexcept
+		-> void
 	{
 		assert(is_pile(a));
 		assert(is_pile(b));
 		std::swap(pile(a), pile(b));
 	}
 
+	// TODO: Move to protected (because it needs to be used by LimboFrame to do
+	// its thing and clarify that if you really need to clear the board, you can
+	// just recreate the object in place (use std::optional or similar).
 	constexpr auto clear() noexcept -> void
 	{
 		auto destruct_pile = [this](PileType& p)
@@ -511,8 +515,8 @@ protected:
 
 	// Methods that compose add and remove operations.
 
-	constexpr auto card_insert(PlaceType const& place,
-	                           CardType& c) noexcept -> void
+	constexpr auto card_insert(PlaceType const& place, CardType& c) noexcept
+		-> void
 	{
 		if(is_pile(place))
 		{
@@ -650,8 +654,8 @@ private:
 
 	// Utility functions.
 
-	static constexpr auto take_at_(PileType& p,
-	                               size_t index) noexcept -> CardType*
+	static constexpr auto take_at_(PileType& p, size_t index) noexcept
+		-> CardType*
 	{
 		assert(p.size() > index);
 		CardType* c = p[index];

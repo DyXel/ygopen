@@ -65,8 +65,8 @@ public:
 		return std::exchange(deferred_, {});
 	}
 
-	auto xyz_left(Place const& left,
-	              Place const& from) noexcept -> void override
+	auto xyz_left(Place const& left, Place const& from) noexcept
+		-> void override
 	{
 		left_[left] = from;
 	}
