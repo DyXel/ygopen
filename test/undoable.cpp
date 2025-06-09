@@ -59,4 +59,9 @@ TEST_F(UndoableTest, UndoCalledTooMuchDies)
 		"");
 }
 
+TYPED_TEST(UndoableTest, EraseHistoryWorks)
+{
+	// TODO
+}
+
 } // namespace

@@ -49,6 +49,11 @@ public:
 		current_--;
 	}
 
+	constexpr auto erase_history() noexcept -> void
+	{
+		assert(false); // TODO
+	}
+
 	// FIXME: Too lazy to do something else, should probably be optimized
 	//        and/or be its own template type or something...
 

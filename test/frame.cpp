@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, Dylam De La Torre <dyxel04@gmail.com>
+ * Copyright (c) 2025, Dylam De La Torre <dyxel04@gmail.com>
  *
  * SPDX-License-Identifier: AGPL-3.0-or-later
  */
@@ -22,6 +22,10 @@ template<typename T>
 class FrameDeathTest : public FrameTest<T>
 {};
 
+template<typename T>
+class FrameUndoTest : public FrameTest<T>
+{};
+
 struct Empty
 {};
 
@@ -32,8 +36,10 @@ using LimboFrameWithEmpty = YGOpen::Client::LimboFrame<Empty>;
 
 using FrameTypes = ::testing::Types<FrameWithInt, FrameWithEmpty,
                                     LimboFrameWithInt, LimboFrameWithEmpty>;
+using FrameUndoTypes = ::testing::Types<LimboFrameWithInt, LimboFrameWithEmpty>;
 TYPED_TEST_SUITE(FrameTest, FrameTypes);
 TYPED_TEST_SUITE(FrameDeathTest, FrameTypes);
+TYPED_TEST_SUITE(FrameUndoTest, FrameUndoTypes);
 
 constexpr auto OSEQ_INVALID = YGOpen::Proto::Duel::OSEQ_INVALID;
 
@@ -501,6 +507,60 @@ TYPED_TEST(FrameDeathTest, BadPileSpliceUsageDies)
 }
 
 TYPED_TEST(FrameDeathTest, BadPileSwapUsageDies)
+{
+	// TODO
+}
+
+TYPED_TEST(FrameUndoTest, UndoCardAddWorks)
+{
+	auto& frame = this->frame;
+	YGOpen::Proto::Duel::Place p;
+	p.set_loc(LOCATION_HAND);
+	p.set_oseq(OSEQ_INVALID);
+	auto const& c = frame.card_add(p);
+	EXPECT_EQ(&c, &frame.card(p));
+	auto const& c2 = frame.undo_card_add(p);
+	EXPECT_EQ(&c, &c2);
+	auto const& c3 = frame.card_add(p);
+	EXPECT_EQ(&c2, &c3);
+}
+
+TYPED_TEST(FrameUndoTest, UndoCardRemoveWorks)
+{
+	auto& frame = this->frame;
+	YGOpen::Proto::Duel::Place p;
+	p.set_loc(LOCATION_HAND);
+	p.set_oseq(OSEQ_INVALID);
+	auto const& c = frame.card_add(p);
+	EXPECT_EQ(&c, &frame.card(p));
+	//
+	frame.card_remove(p);
+	EXPECT_FALSE(frame.has_card(p));
+	auto const& c2 = frame.undo_card_remove(p);
+	EXPECT_EQ(&c, &c2);
+}
+
+TYPED_TEST(FrameUndoTest, UndoPileResizeWorks)
+{
+	// TODO
+}
+
+TYPED_TEST(FrameUndoTest, UndoClearWorks)
+{
+	// TODO
+}
+
+TYPED_TEST(FrameUndoTest, UndoClearWorks)
+{
+	// TODO
+}
+
+TYPED_TEST(FrameUndoTest, UndoCardShuffleWorks)
+{
+	// TODO
+}
+
+TYPED_TEST(FrameUndoTest, EraseHistoryWorks)
 {
 	// TODO
 }
