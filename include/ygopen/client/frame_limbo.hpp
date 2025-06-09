@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024, Dylam De La Torre <dyxel04@gmail.com>
+ * Copyright (c) 2025, Dylam De La Torre <dyxel04@gmail.com>
  *
  * SPDX-License-Identifier: AGPL-3.0-or-later
  */
@@ -7,6 +7,8 @@
 #define YGOPEN_CLIENT_FRAME_LIMBO_HPP
 #include <map>
 #include <ygopen/client/frame.hpp>
+
+// TODO: Unit test undo specialized operations.
 
 namespace YGOpen::Client
 {
@@ -93,7 +95,7 @@ public:
 
 	constexpr auto undo_card_remove(PlaceType const& place) noexcept -> void
 	{
-		assert(this->has_card(place));
+		assert(limbo_cards_.count(op_) > 0);
 		BaseFrame::card_insert(place, *limbo_cards_[op_]);
 		regress_op_();
 	}
