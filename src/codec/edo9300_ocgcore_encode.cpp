@@ -889,7 +889,15 @@ auto encode_one(google::protobuf::Arena& arena, IEncodeContext& context,
 					if(read<uint8_t>(data, "has card") == 0U)
 						continue;
 					skip<CSPos>(data, "position (current)");
-					add_one(loc, seq, OSEQ_INVALID);
+					if(loc == LOCATION_SPELL_ZONE)
+					{
+						auto const [f_loc, f_seq] = fix_spell_loc_seq(loc, seq);
+						add_one(f_loc, f_seq, OSEQ_INVALID);
+					}
+					else
+					{
+						add_one(loc, seq, OSEQ_INVALID);
+					}
 					auto const mats = read<CCount>(data, "xyz mats count");
 					for(CCount oseq = 0U; oseq < mats; oseq++)
 						add_one(loc, seq, static_cast<COSeq>(oseq));
