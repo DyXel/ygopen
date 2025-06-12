@@ -550,11 +550,6 @@ TYPED_TEST(FrameUndoTest, UndoClearWorks)
 	// TODO
 }
 
-TYPED_TEST(FrameUndoTest, UndoClearWorks)
-{
-	// TODO
-}
-
 TYPED_TEST(FrameUndoTest, UndoCardShuffleWorks)
 {
 	// TODO

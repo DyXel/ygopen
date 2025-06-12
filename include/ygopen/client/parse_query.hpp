@@ -119,7 +119,7 @@ template<bool use_cache = false, typename Frame>
 		card.targets().assign(rf.cbegin(), rf.cend());
 	}
 	return hits;
-} // namespace YGOpen::Client
+}
 
 } // namespace YGOpen::Client
 

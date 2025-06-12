@@ -393,9 +393,11 @@ message Msg
 			{
 				message _TributeCard
 				{
-					Place place     = 1;
-					uint32 code     = 2;
-					uint32 count_as = 3;
+					Place place              = 1;
+					uint32 code              = 2;
+					// Same constraints as UniqueSum. Read above.
+					//repeated uint32 count_as = 3;
+					uint32 count_as          = 3;
 				}
 
 				// Can the selection be cancelled?

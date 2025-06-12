@@ -59,7 +59,7 @@ TEST_F(UndoableTest, UndoCalledTooMuchDies)
 		"");
 }
 
-TYPED_TEST(UndoableTest, EraseHistoryWorks)
+TEST_F(UndoableTest, EraseHistoryWorks)
 {
 	// TODO
 }

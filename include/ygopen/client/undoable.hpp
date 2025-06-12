@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024, Dylam De La Torre <dyxel04@gmail.com>
+ * Copyright (c) 2025, Dylam De La Torre <dyxel04@gmail.com>
  *
  * SPDX-License-Identifier: AGPL-3.0-or-later
  */
@@ -35,13 +35,13 @@ public:
 			values_.emplace_back(std::forward<U>(v));
 		current_++;
 		return *this;
-	};
+	}
 
 	template<typename U = ValueType>
 	constexpr auto operator==(U&& v) const noexcept -> bool
 	{
 		return *current_ == v;
-	};
+	}
 
 	constexpr auto undo() noexcept -> void
 	{
@@ -58,35 +58,34 @@ public:
 	//        and/or be its own template type or something...
 
 	template<typename... Args>
-	constexpr auto assign(Args&&... args) noexcept -> auto
+	constexpr auto assign(Args&&... args) noexcept -> void
 	{
 		if(current_ == --values_.cend())
 			values_.emplace_back().assign(std::forward<Args>(args)...);
 		current_++;
-		return *this;
-	};
+	}
 
 	template<typename... Args>
-	constexpr auto push_back(Args&&... args) noexcept -> auto
+	constexpr auto push_back(Args&&... args) noexcept -> void
 	{
 		assert(false); // TODO
-	};
+	}
 
-	constexpr auto pop_back() noexcept -> auto
+	constexpr auto pop_back() noexcept -> void
 	{
 		assert(false); // TODO
-	};
+	}
 
 	template<typename... Args>
-	constexpr auto undo_push_back(Args&&... args) noexcept -> auto
+	constexpr auto undo_push_back(Args&&... args) noexcept -> void
 	{
 		assert(false); // TODO
-	};
+	}
 
-	constexpr auto undo_pop_back() noexcept -> auto
+	constexpr auto undo_pop_back() noexcept -> void
 	{
 		assert(false); // TODO
-	};
+	}
 
 private:
 	ContainerType values_;
